@@ -20,7 +20,7 @@ def create_mlp_model(norm_type, **kwargs):
     return model
 
 
-def create_resnet_model(norm_type):
+def create_resnet18_model(norm_type):
     assert norm_type in ["bn", "ln", "gn"]
 
     if norm_type == "bn":
@@ -38,13 +38,6 @@ def create_resnet_model(norm_type):
 if __name__ == '__main__':
     from torchinfo import summary
 
-    model = create_resnet_model("bn")
+    model = create_resnet18_model("bn")
     summary(model, (1, 3, 32, 32))
-    # track_buffers = ["before_mean", "before_var", "after_mean", "after_var", "after_affine_mean", "after_affine_var"]
-    # log_dict = {}
-    # for buffer in track_buffers:
-    #     log_dict[buffer] = {} 
-    
-    # for name, p in model.named_buffers():
-    #     print(name)
             

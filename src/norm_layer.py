@@ -14,6 +14,8 @@ class LogBatchNorm(nn.BatchNorm2d):
                  affine=True, track_running_stats=True):
         super(LogBatchNorm, self).__init__(
             num_features, eps, momentum, affine, track_running_stats)
+
+        # These buffers track layer state before and after normalization
         self.register_buffer('before_mean', None)
         self.register_buffer('before_var', None)
         self.register_buffer('after_mean', None)
@@ -129,62 +131,32 @@ class LogGroupNorm(nn.GroupNorm):
         return input
 
 
-# class LogBatchNorm2d(nn.BatchNorm2d):
-#     def __init__(self, num_features, eps=1e-5, momentum=0.1,
-#                  affine=True, track_running_stats=True):
-#         super(LogBatchNorm2d, self).__init__(
-#             num_features, eps, momentum, affine, track_running_stats)
-#         self.register_buffer('before_mean', torch.zeros(num_features))
-#         self.register_buffer('before_var', torch.ones(num_features))
-#         self.register_buffer('after_mean', torch.zeros(num_features))
-#         self.register_buffer('after_var', torch.ones(num_features))
-
-#     def forward(self, input):
-#         self.before_mean = input.mean([0, 2, 3])
-#         self.before_var = input.var([0, 2, 3], unbiased=False)
-
-#         output = super().forward(input)
-
-#         self.after_mean = output.mean([0, 2, 3])
-#         self.after_var = output.var([0, 2, 3], unbiased=False)
-#         return output
-
-
-# class LogGroupNorm2d(nn.GroupNorm):
-#     def __init__(self, num_groups, num_channels, eps=1e-05, affine=True):
-#         super(LogGroupNorm2d, self).__init__(
-#             num_groups, num_channels, eps, affine)
-
-#         self.register_buffer('before_mean', None)
-#         self.register_buffer('before_var', None)
-#         self.register_buffer('after_mean', None)
-#         self.register_buffer('after_var', None)
-
-#     def forward(self, input):
-#         b, c, h, w = input.shape
-#         input_ = input.view(b, self.num_groups, -1, h, w)
-#         self.before_mean = input_.mean([2, 3, 4])
-#         self.before_var = input_.var([2, 3, 4], unbiased=False)
-
-#         output = super().forward(input)
-
-#         output_ = output.view(b, self.num_groups, -1, h, w)
-#         self.after_mean = output_.mean([2, 3, 4])
-#         self.after_var = output_.var([2, 3, 4], unbiased=False)
-#         return output
-
-
 if __name__ == '__main__':
     torch.manual_seed(0)
-    x = torch.rand(3, 8, 2, 2)
-
+    x1 = torch.rand(3, 4, 2, 2)
+    x2 = torch.rand(3, 4, 2, 2)
+    x3 = torch.rand(3, 4, 2, 2)
     
-    norm1 = nn.BatchNorm2d(8)
-    norm2 = LogBatchNorm(8, input_type="2d")
-    print(torch.allclose(norm1(x), norm2(x)))
-    print(norm1(x), norm1(x).size())
-    print(norm2(x), norm2(x).size())
-    # print(norm2.before_mean.size(), norm2.before_var.size(), norm2.after_mean.size(), norm2.after_var.size())
-    # print(list(norm2.named_buffers()))
-    print(norm2.after_var, norm2.after_mean)
-    print(norm2.after_affine_mean, norm2.after_affine_var)
+    norm1 = nn.BatchNorm2d(4)
+    norm2 = LogBatchNorm(4, input_type="2d")
+    print(torch.allclose(norm1(x1), norm2(x1)))
+    print(torch.allclose(norm1(x2), norm2(x2)))
+    track_buffers = ["before_mean", "before_var", "after_mean", "after_var", "after_affine_mean", "after_affine_var"]
+    track_buffers += ["running_mean", "running_var"]
+    for name, p in norm2.named_buffers():
+        for n in track_buffers:
+            if n in name:
+                flattened_p = torch.flatten(p).clamp(max=100).float().detach()
+
+    norm1.eval()
+    norm2.eval()
+
+    print(torch.allclose(norm1(x3), norm2(x3)))
+    print(torch.allclose(norm1(x1), norm2(x1)))
+    print(torch.allclose(norm1(x2), norm2(x2)))
+
+    norm1.train()
+    norm2.train()
+    print(torch.allclose(norm1(x3), norm2(x3)))
+    print(torch.allclose(norm1(x1), norm2(x1)))
+    print(torch.allclose(norm1(x2), norm2(x2)))
