@@ -131,6 +131,49 @@ class LogGroupNorm(nn.GroupNorm):
         return input
 
 
+class LogReGroupNorm(nn.GroupNorm):
+    def __init__(self, num_groups, num_channels, r=1., affine=True):
+        super(LogReGroupNorm, self).__init__(
+            num_groups, num_channels, affine)
+        self.r = r
+        self.register_buffer('before_mean', None)
+        self.register_buffer('before_var', None)
+        self.register_buffer('after_mean', None)
+        self.register_buffer('after_var', None)
+        self.register_buffer('after_affine_mean', None)
+        self.register_buffer('after_affine_var', None)
+
+    def forward(self, input):
+        b = input.size(0)
+        init_size = input.size()
+        input = input.view(b, self.num_groups, -1)
+        self.before_mean = input.mean(2)
+        self.before_var = input.var(2, unbiased=False)
+
+        mean = self.before_mean
+        var = self.before_var
+
+        input = (input - mean[:, :, None]) / torch.sqrt(var[:, :, None]).clamp(min=self.r)
+
+        self.after_mean = input.mean(2)
+        self.after_var = input.var(2, unbiased=False)
+
+        input = input.view(init_size)
+        if self.affine:
+            if len(init_size) == 2:
+                input = input * self.weight[None, :] + self.bias[None, :]
+            elif len(init_size) == 4:
+                input = input * self.weight[None, :, None, None] + self.bias[None, :, None, None]
+            else:
+                raise NotImplementedError("Only 1D and 2D groupnorm with affine")
+
+        input_ = input.view(b, self.num_groups, -1)
+        self.after_affine_mean = input_.mean(2)
+        self.after_affine_var = input_.var(2, unbiased=False)
+
+        return input
+
+
 if __name__ == '__main__':
     torch.manual_seed(0)
     x1 = torch.rand(3, 4, 2, 2)

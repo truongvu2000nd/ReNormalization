@@ -3,21 +3,20 @@ seed: 42
 # trainer
 max_epochs: 100
 log_every_n_steps: 50
-save_dir: null
+save_dir: /content/drive/MyDrive/logs
 
 # model
 arch: resnet18
-norm_type: reln
-model_kwargs: 
-  r: 1.0
+norm_type: gn
+model_kwargs: {}
 
 # optimizer
 lr: 0.1
 weight_decay: 5e-4
 
 # data
-data_dir: ../datasets/CIFAR10
+data_dir: /content/data
 num_workers: 2
-batch_size: 16
+batch_size: 128
 
 ckpt_path: null

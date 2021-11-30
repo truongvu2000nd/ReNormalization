@@ -7,12 +7,15 @@ save_dir: /content/drive/MyDrive/logs
 
 # model
 arch: resnet18
-norm_type: bn
+norm_type: ln
+model_kwargs: {}
+
+# optimizer
+lr: 0.1
+weight_decay: 5e-4
 
 # data
 data_dir: /content/data
-normalize: true
-val_split: 5000
 num_workers: 2
 batch_size: 256
 
