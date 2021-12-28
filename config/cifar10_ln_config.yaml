@@ -8,12 +8,10 @@ log_every:
   value: 50
 
 # model
-arch: 
-  value: resnet18
 norm_type: 
-  value: reln
+  value: ln
 model_kwargs: 
-  value: {"r": 1.0}
+  value: {}
 
 # optimizer
 lr: 
