@@ -26,6 +26,7 @@ parser.add_argument('--resume', '-r', action='store_true',
 parser.add_argument('--id', default="", type=str, help='wandb_id (if set --resume)')
 parser.add_argument('--save_dir', default="", type=str, help='where to save wandb logs locally')
 parser.add_argument('--config', default="config.yaml", type=str, help='wandb config file')
+parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--wandb_group', default="", type=str, help='wandb group')
 
 args = parser.parse_args()
@@ -246,5 +247,5 @@ if __name__ == '__main__':
         scheduler.step()
         wandb.log({"lr": scheduler.get_last_lr()[0]})
 
-    wandb.summary()
-    log_norm_state()
+    # wandb.summary()
+    # log_norm_state()

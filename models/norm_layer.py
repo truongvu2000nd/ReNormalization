@@ -128,7 +128,6 @@ class ReBatchNorm(nn.BatchNorm2d):
         super(ReBatchNorm, self).__init__(
             num_features, eps, momentum, affine, track_running_stats)
         self.r = r
-        print(r)
 
         # These buffers track layer state before and after normalization
         self.register_buffer('before_mean', None)

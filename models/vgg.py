@@ -2,6 +2,7 @@
 import torch
 from torch.functional import norm
 import torch.nn as nn
+import math
 from .norm_layer import get_norm_layer
 
 
@@ -19,6 +20,7 @@ class VGG(nn.Module):
         self.norm_layer = get_norm_layer(norm_layer, **kwargs)
         self.features = self._make_layers(cfg[vgg_name])
         self.classifier = nn.Linear(512, 10)
+        self._initialize_weights()
 
     def forward(self, x):
         out = self.features(x)
@@ -39,6 +41,20 @@ class VGG(nn.Module):
                 in_channels = x
         layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
         return nn.Sequential(*layers)
+
+    def _initialize_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                m.weight.data.normal_(0, math.sqrt(2. / n))
+                if m.bias is not None:
+                    m.bias.data.zero_()
+            elif isinstance(m, nn.BatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
+            elif isinstance(m, nn.Linear):
+                m.weight.data.normal_(0, 0.01)
+                m.bias.data.zero_()
 
 
 def test():
