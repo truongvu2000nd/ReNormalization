@@ -37,6 +37,7 @@ else:
     run = wandb.init(project=PROJECT_NAME, group=args.wandb_group, 
                      dir=args.save_dir, config=args.config)
 config = wandb.config
+config.lr = args.lr
 print(config)
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
