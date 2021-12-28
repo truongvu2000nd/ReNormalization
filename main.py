@@ -28,9 +28,9 @@ parser.add_argument('--id', default="", type=str, help='wandb_id (if set --resum
 parser.add_argument('--save_dir', default="", type=str, help='where to save wandb logs locally')
 parser.add_argument('--config', default="config.yaml", type=str, help='wandb config file')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
-parser.add_argument('--norm_type', default=0.1, type=float, help='norm type')
+parser.add_argument('--norm_type', default="", type=str, help='norm type')
 parser.add_argument('--r', default=1.0, type=float, help='renorm param r')
-parser.add_argument('--use_scheduler', default=False, type=bool, help="use learning rate scheduler")
+parser.add_argument('--use_scheduler', action='store_true', help="use learning rate scheduler")
 parser.add_argument('--wandb_group', default="", type=str, help='wandb group')
 
 args = parser.parse_args()
@@ -42,7 +42,7 @@ else:
                      dir=args.save_dir, config=args.config)
 config = wandb.config
 if not args.resume:
-    config.lr = args.lr
+    config.update({"lr": args.lr})
     config.use_scheduler = args.use_scheduler
 print(config)
 
@@ -148,7 +148,7 @@ def train(epoch):
             wandb.log({
                 "train_loss": train_loss/(batch_idx+1), 
                 "train_acc": 100.*correct/total}, step=global_step)
-    print("End of epoch {} | Epoch time: {}".format(epoch, time.time() - start_time))
+    print("End of epoch {} | Training time: {:.2f}s".format(epoch, time.time() - start_time))
 
 
 def test(epoch):
