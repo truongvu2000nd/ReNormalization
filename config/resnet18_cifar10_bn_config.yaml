@@ -11,7 +11,7 @@ log_every:
 arch: 
   value: resnet18
 norm_type: 
-  value: gn
+  value: bn
 model_kwargs: 
   value: {}
 
