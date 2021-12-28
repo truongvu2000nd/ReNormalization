@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from torchvision.models import resnet18
+from torchvision.models import resnet18, vgg16
 
 from .norm_layer import BatchNorm, GroupNorm, ReGroupNorm, ReBatchNorm
 from functools import partial

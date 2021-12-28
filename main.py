@@ -9,6 +9,7 @@ import torchvision
 import torchvision.transforms as transforms
 
 import os
+import time
 import argparse
 import matplotlib.pyplot as plt
 import wandb
@@ -27,6 +28,9 @@ parser.add_argument('--id', default="", type=str, help='wandb_id (if set --resum
 parser.add_argument('--save_dir', default="", type=str, help='where to save wandb logs locally')
 parser.add_argument('--config', default="config.yaml", type=str, help='wandb config file')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
+parser.add_argument('--norm_type', default=0.1, type=float, help='norm type')
+parser.add_argument('--r', default=1.0, type=float, help='renorm param r')
+parser.add_argument('--use_scheduler', default=False, type=bool, help="use learning rate scheduler")
 parser.add_argument('--wandb_group', default="", type=str, help='wandb group')
 
 args = parser.parse_args()
@@ -37,7 +41,9 @@ else:
     run = wandb.init(project=PROJECT_NAME, group=args.wandb_group, 
                      dir=args.save_dir, config=args.config)
 config = wandb.config
-config.lr = args.lr
+if not args.resume:
+    config.lr = args.lr
+    config.use_scheduler = args.use_scheduler
 print(config)
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -93,7 +99,9 @@ if config.watch_model:
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=config.lr,
                       momentum=0.9, weight_decay=config.weight_decay)
-scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config.n_epochs)
+
+if config.use_scheduler:
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config.n_epochs)
 
 
 if wandb.run.resumed:
@@ -105,7 +113,8 @@ if wandb.run.resumed:
     loss = checkpoint['loss']
     global_step = run.step
     best_acc = checkpoint['best_acc']
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config.n_epochs, last_epoch=start_epoch)
+    if config.use_scheduler:
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config.n_epochs, last_epoch=start_epoch)
     
 
 # ------------------------------------------------------
@@ -118,6 +127,7 @@ def train(epoch):
     train_loss = 0
     correct = 0
     total = 0
+    start_time = time.time()
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         global_step += 1
         inputs, targets = inputs.to(device), targets.to(device)
@@ -138,6 +148,7 @@ def train(epoch):
             wandb.log({
                 "train_loss": train_loss/(batch_idx+1), 
                 "train_acc": 100.*correct/total}, step=global_step)
+    print("End of epoch {} | Epoch time: {}".format(epoch, time.time() - start_time))
 
 
 def test(epoch):
@@ -245,8 +256,8 @@ if __name__ == '__main__':
     for epoch in range(start_epoch, config.n_epochs):
         train(epoch)
         test(epoch)
-        scheduler.step()
-        wandb.log({"lr": scheduler.get_last_lr()[0]})
+        if config.use_scheduler:
+            scheduler.step()
+            wandb.log({"lr": scheduler.get_last_lr()[0]})
 
-    # wandb.summary()
-    # log_norm_state()
+    log_norm_state()
