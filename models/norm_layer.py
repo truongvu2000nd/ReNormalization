@@ -200,10 +200,11 @@ class ReBatchNorm(nn.BatchNorm2d):
 
 
 class ReGroupNorm(nn.GroupNorm):
-    def __init__(self, num_groups, num_channels, r=1., affine=True):
+    def __init__(self, num_groups, num_channels, r=1., affine=True, modified=False):
         super(ReGroupNorm, self).__init__(
             num_groups, num_channels, affine)
         self.r = r
+        self.modified = modified
         self.register_buffer('before_mean', None)
         self.register_buffer('before_var', None)
         self.register_buffer('after_mean', None)
@@ -213,6 +214,7 @@ class ReGroupNorm(nn.GroupNorm):
         b = input.size(0)
         init_size = input.size()
         input = input.view(b, self.num_groups, -1)
+        s = input.size(2)
         mean = input.mean(2)
         var = input.var(2, unbiased=False)
 
@@ -233,8 +235,8 @@ class ReGroupNorm(nn.GroupNorm):
             else:
                 raise NotImplementedError("Only 1D and 2D groupnorm with affine")
 
-        input_ = input.view(b, self.num_groups, -1)
-
+        if self.modified:
+            input = input * s / (s - 1)
         return input
 
 
