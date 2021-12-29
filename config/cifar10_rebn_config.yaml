@@ -14,8 +14,8 @@ model_kwargs:
   value: {r: 1.0}
 
 # optimizer
-lr: 
-  value: 0.1
+# lr: 
+#   value: 0.1
 weight_decay: 
   value: 5.e-4
 

@@ -266,4 +266,6 @@ def get_norm_layer(norm_layer=None, **kwargs):
 
 
 if __name__ == '__main__':
-    import time
+    gn = ReGroupNorm(3, 9, modified=True)
+    x = torch.randn(1, 9, 3, 3)
+    gn(x)

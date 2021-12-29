@@ -65,5 +65,5 @@ def test():
 
 if __name__ == '__main__':
     from torchinfo import summary
-    net = VGG('VGG16', norm_layer="regn", r=1.4)
+    net = VGG('VGG16', norm_layer="regn", r=1.4, modified=True)
     summary(net, (1, 3, 32, 32))
