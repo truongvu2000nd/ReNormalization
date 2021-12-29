@@ -11,6 +11,7 @@ import torchvision.transforms as transforms
 import os
 import time
 import argparse
+import numpy as np
 import matplotlib.pyplot as plt
 import wandb
 from collections import OrderedDict
@@ -242,7 +243,7 @@ def log_norm_state():
         log_norms[key] = torch.cat(value, dim=0)
 
     for stat in track_buffers:
-        boxes = torch.vstack([val for key, val in log_norms.items() if stat in key]).cpu().numpy().T
+        boxes = np.array([val.cpu().numpy() for key, val in log_norms.items() if stat in key], dtype=object)
         fig = plt.figure(dpi=150)
         plt.boxplot(boxes)
         plt.xlabel("layer")
@@ -250,6 +251,7 @@ def log_norm_state():
         wandb.log({f"boxplot/{stat}": wandb.Image(fig)})
         plt.yscale('log')
         wandb.log({f"boxplot_log_scale/{stat}": wandb.Image(fig)})
+        plt.close("all")
 
 
 if __name__ == '__main__':
