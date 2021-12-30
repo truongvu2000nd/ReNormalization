@@ -31,6 +31,7 @@ parser.add_argument('--config', default="config.yaml", type=str, help='wandb con
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--norm_type', default="", type=str, help='norm type')
 parser.add_argument('--r', default=1.0, type=float, help='renorm param r')
+parser.add_argument('--log_norm_state_every', default=100, type=int)
 parser.add_argument('--use_scheduler', action='store_true', help="use learning rate scheduler")
 parser.add_argument('--wandb_group', default="", type=str, help='wandb group')
 
@@ -45,6 +46,7 @@ config = wandb.config
 if not args.resume:
     config.update({"lr": args.lr})
     config.use_scheduler = args.use_scheduler
+    config.log_norm_state_every = args.log_norm_state_every
 print(config)
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -175,7 +177,7 @@ def test(epoch):
 
     # Save checkpoint.
     acc = 100.*correct/total
-    wandb.log({"test_loss": test_loss, "test_acc": acc})
+    wandb.log({"test_loss": test_loss, "test_acc": acc}, step=global_step)
     print('Saving..')
     
     if acc > best_acc:
@@ -243,14 +245,14 @@ def log_norm_state():
         log_norms[key] = torch.cat(value, dim=0)
 
     for stat in track_buffers:
-        boxes = np.array([val.cpu().numpy() for key, val in log_norms.items() if stat in key], dtype=object)
+        boxes = np.array([val.cpu().numpy() for key, val in log_norms.items() if stat in key], dtype=object).T
         fig = plt.figure(dpi=150)
         plt.boxplot(boxes)
         plt.xlabel("layer")
         plt.ylabel(stat)
-        wandb.log({f"boxplot/{stat}": wandb.Image(fig)})
+        wandb.log({f"boxplot/{stat}": wandb.Image(fig)}, step=global_step)
         plt.yscale('log')
-        wandb.log({f"boxplot_log_scale/{stat}": wandb.Image(fig)})
+        wandb.log({f"boxplot_log_scale/{stat}": wandb.Image(fig)}, step=global_step)
         plt.close("all")
 
 
@@ -260,6 +262,7 @@ if __name__ == '__main__':
         test(epoch)
         if config.use_scheduler:
             scheduler.step()
-            wandb.log({"lr": scheduler.get_last_lr()[0]})
+            wandb.log({"lr": scheduler.get_last_lr()[0]}, step=global_step)
 
-    log_norm_state()
+        if (epoch + 1) % config.log_norm_state_every:
+            log_norm_state()
