@@ -104,7 +104,7 @@ optimizer = optim.SGD(net.parameters(), lr=config.lr,
                       momentum=0.9, weight_decay=config.weight_decay)
 
 if config.use_scheduler:
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config.n_epochs)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config.n_epochs, eta_min=1e-4)
 
 
 if wandb.run.resumed:
@@ -117,7 +117,9 @@ if wandb.run.resumed:
     global_step = run.step
     best_acc = checkpoint['best_acc']
     if config.use_scheduler:
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config.n_epochs, last_epoch=start_epoch)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=config.n_epochs, last_epoch=start_epoch, eta_min=1e-4
+        )
     
 
 # ------------------------------------------------------
@@ -216,7 +218,7 @@ def log_norm_state():
         "after_mean",
         "after_var",
     ]
-    if config.norm_type == "bn":
+    if config.norm_type in ["bn", "rebn"]:
         track_buffers += ["running_mean", "running_var"]
 
     log_dicts = []
@@ -264,5 +266,5 @@ if __name__ == '__main__':
             scheduler.step()
             wandb.log({"lr": scheduler.get_last_lr()[0]}, step=global_step)
 
-        if (epoch + 1) % config.log_norm_state_every:
+        if (epoch + 1) % config.log_norm_state_every == 0:
             log_norm_state()
