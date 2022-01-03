@@ -41,7 +41,7 @@ args = parser.parse_args()
 if args.resume:
     run = wandb.init(project=PROJECT_NAME, dir=args.save_dir, resume=True, id=args.id)
 else:
-    run = wandb.init(project=PROJECT_NAME, group=args.wandb_group, mode="offline",
+    run = wandb.init(project=PROJECT_NAME, group=args.wandb_group, 
                      dir=args.save_dir, config=args.config)
 config = wandb.config
 if not args.resume:
