@@ -29,6 +29,7 @@ parser.add_argument('--id', default="", type=str, help='wandb_id (if set --resum
 parser.add_argument('--save_dir', default="", type=str, help='where to save wandb logs locally')
 parser.add_argument('--config', default="config.yaml", type=str, help='wandb config file')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
+parser.add_argument('--n_epochs', default=200, type=float, help='num epochs')
 parser.add_argument('--norm_type', default="", type=str, help='norm type')
 parser.add_argument('--r', default=1.0, type=float, help='renorm param r')
 parser.add_argument('--log_norm_state_every', default=100, type=int)
@@ -40,11 +41,11 @@ args = parser.parse_args()
 if args.resume:
     run = wandb.init(project=PROJECT_NAME, dir=args.save_dir, resume=True, id=args.id)
 else:
-    run = wandb.init(project=PROJECT_NAME, group=args.wandb_group, 
+    run = wandb.init(project=PROJECT_NAME, group=args.wandb_group, mode="offline",
                      dir=args.save_dir, config=args.config)
 config = wandb.config
 if not args.resume:
-    config.update({"lr": args.lr})
+    config.update({"lr": args.lr, "n_epochs": args.n_epochs}, allow_val_change=True)
     config.use_scheduler = args.use_scheduler
     config.log_norm_state_every = args.log_norm_state_every
 print(config)

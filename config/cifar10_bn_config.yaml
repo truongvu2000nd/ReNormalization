@@ -3,7 +3,7 @@ seed:
 
 # trainer
 n_epochs: 
-  value: 100
+  value: 200
 log_every:
   value: 50
 
