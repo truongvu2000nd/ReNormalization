@@ -19,7 +19,7 @@ from collections import OrderedDict
 from models import *
 
 
-PROJECT_NAME = 'ReNorm5.5'
+PROJECT_NAME = 'ReNorm5.5-large-lr'
 
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
@@ -29,7 +29,7 @@ parser.add_argument('--id', default="", type=str, help='wandb_id (if set --resum
 parser.add_argument('--save_dir', default="", type=str, help='where to save wandb logs locally')
 parser.add_argument('--config', default="config.yaml", type=str, help='wandb config file')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
-parser.add_argument('--n_epochs', default=200, type=float, help='num epochs')
+parser.add_argument('--n_epochs', default=200, type=int, help='num epochs')
 parser.add_argument('--norm_type', default="", type=str, help='norm type')
 parser.add_argument('--r', default=1.0, type=float, help='renorm param r')
 parser.add_argument('--log_norm_state_every', default=100, type=int)
