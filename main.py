@@ -268,3 +268,5 @@ if __name__ == '__main__':
 
         if (epoch + 1) % config.log_norm_state_every == 0:
             log_norm_state()
+    
+    log_norm_state()
