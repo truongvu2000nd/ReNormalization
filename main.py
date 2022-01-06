@@ -19,7 +19,7 @@ from collections import OrderedDict
 from models import *
 
 
-PROJECT_NAME = 'ReNorm5.5-large-lr'
+PROJECT_NAME = 'ReNorm5.3'
 
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
@@ -29,7 +29,7 @@ parser.add_argument('--id', default="", type=str, help='wandb_id (if set --resum
 parser.add_argument('--save_dir', default="", type=str, help='where to save wandb logs locally')
 parser.add_argument('--config', default="config.yaml", type=str, help='wandb config file')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
-parser.add_argument('--n_epochs', default=200, type=int, help='num epochs')
+parser.add_argument('--n_epochs', default=100, type=int, help='num epochs')
 parser.add_argument('--r', default=None, type=float, help='renorm param r')
 parser.add_argument('--log_norm_state_every', default=100, type=int)
 parser.add_argument('--use_scheduler', action='store_true', help="use learning rate scheduler")
@@ -44,7 +44,7 @@ else:
                      dir=args.save_dir, config=args.config)
 config = wandb.config
 if not args.resume:
-    config.update({"lr": args.lr, "n_epochs": args.n_epochs, "model_kwargs": {"r": args.r}}, allow_val_change=True)
+    config.update({"lr": args.lr, "n_epochs": args.n_epochs}, allow_val_change=True)
     config.use_scheduler = args.use_scheduler
     config.log_norm_state_every = args.log_norm_state_every
 print(config)

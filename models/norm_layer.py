@@ -200,7 +200,7 @@ class ReBatchNorm(nn.BatchNorm2d):
 
 
 class ReGroupNorm(nn.GroupNorm):
-    def __init__(self, num_groups, num_channels, r=1., affine=True, modified=False):
+    def __init__(self, num_groups, num_channels, r=1., affine=True, modified=True):
         super(ReGroupNorm, self).__init__(
             num_groups, num_channels, affine)
         self.r = r
