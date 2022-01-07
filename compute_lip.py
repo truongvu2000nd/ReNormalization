@@ -25,13 +25,12 @@ wandb.restore('checkpoint/last.pth')
 checkpoint = torch.load(os.path.join(wandb.run.dir, 'checkpoint/last.pth'))
 missing_keys, _  = net.load_state_dict(checkpoint['net_state_dict'], strict=False)
 print(missing_keys)
+net.eval()
 epoch = checkpoint['epoch']
-# loss = checkpoint['loss']
-# global_step = run.step
-# best_acc = checkpoint['best_acc']
 print(epoch)
 assert epoch == 99
 lips = []
+print("Computing lip...")
 for i in range(5):
     lips.append(naive_lip(net, n_iter=100, eps=1e-7, bs=100, device=device))
 lips = np.array(lips)
