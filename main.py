@@ -44,7 +44,7 @@ else:
                      dir=args.save_dir, config=args.config)
 config = wandb.config
 if not args.resume:
-    config.update({"lr": args.lr, "n_epochs": args.n_epochs}, allow_val_change=True)
+    config.update({"lr": args.lr, "n_epochs": args.n_epochs, "model_kwargs": {"r": args.r}}, allow_val_change=True)
     config.use_scheduler = args.use_scheduler
     config.log_norm_state_every = args.log_norm_state_every
 print(config)

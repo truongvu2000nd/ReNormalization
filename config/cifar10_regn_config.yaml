@@ -11,7 +11,7 @@ log_every:
 norm_type: 
   value: regn
 model_kwargs: 
-  value: {"r": 1.0, "modified": true}
+  value: {"r": 1.0}
 
 # optimizer
 lr: 
