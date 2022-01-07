@@ -271,5 +271,5 @@ if __name__ == '__main__':
             log_norm_state()
     
     log_norm_state()
-    lip = naive_lip(net, n_iter=100, eps=1e-7, bs=100)
+    lip = naive_lip(net, n_iter=100, eps=1e-7, bs=100, device=device)
     wandb.run.summary["lip"] = lip

@@ -6,11 +6,11 @@ from models import norm_layer
 
 
 @torch.no_grad()
-def naive_lip(model: nn.Module, n_iter: int = 100, eps=1e-3, bs=100):
+def naive_lip(model: nn.Module, n_iter: int = 100, eps=1e-3, bs=100, device="cpu"):
     lip = -1
     for i in range(n_iter):
-        x1 = torch.randn(bs, 3, 32, 32)
-        alpha = torch.rand(bs, 3, 32, 32) * eps
+        x1 = torch.randn(bs, 3, 32, 32, device=device)
+        alpha = (torch.rand(bs, 3, 32, 32, device=device) * 2 - 1) * eps
 
         y1, y2 = model(x1), model(x1 + alpha)
         denominator = torch.linalg.vector_norm(alpha.view(bs, -1), ord=2, dim=1)
