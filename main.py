@@ -267,7 +267,7 @@ if __name__ == '__main__':
             scheduler.step()
             wandb.log({"lr": scheduler.get_last_lr()[0]}, step=global_step)
 
-        if (epoch + 1) % config.log_norm_state_every == 0:
+        if (epoch + 1) % config.log_norm_state_every == 0 and epoch + 1 != config.n_epochs:
             log_norm_state()
     
     log_norm_state()
