@@ -85,8 +85,47 @@ class BatchNorm(nn.BatchNorm2d):
 
 
 class GroupNorm(nn.GroupNorm):
-    def __init__(self, num_groups, num_channels, eps=1e-05, affine=True):
+    def __init__(self, num_channels, num_groups=32, eps=1e-05, affine=True):
         super(GroupNorm, self).__init__(
+            num_groups, num_channels, eps, affine)
+        self.register_buffer('before_mean', None)
+        self.register_buffer('before_var', None)
+        self.register_buffer('after_mean', None)
+        self.register_buffer('after_var', None)
+
+    def forward(self, input):
+        b = input.size(0)
+        init_size = input.size()
+        input = input.view(b, self.num_groups, -1)
+        mean = input.mean(2)
+        var = input.var(2, unbiased=False)
+
+        input = (input - mean[:, :, None]) / (torch.sqrt(var[:, :, None] + self.eps))
+
+        if not self.training:
+            self.before_mean = mean
+            self.before_var = var
+            self.after_mean = input.mean(2)
+            self.after_var = input.var(2, unbiased=False)
+
+        input = input.view(init_size)
+        if self.affine:
+            if len(init_size) == 2:
+                input = input * self.weight[None, :] + self.bias[None, :]
+            elif len(init_size) == 4:
+                input = input * self.weight[None, :, None, None] + self.bias[None, :, None, None]
+            else:
+                raise NotImplementedError("Only 1D and 2D groupnorm with affine")
+
+        input_ = input.view(b, self.num_groups, -1)
+
+        return input
+
+
+class GroupNorm2(nn.GroupNorm):
+    def __init__(self, num_channels, group_size=2, eps=1e-05, affine=True):
+        num_groups = num_channels // group_size
+        super(GroupNorm2, self).__init__(
             num_groups, num_channels, eps, affine)
         self.register_buffer('before_mean', None)
         self.register_buffer('before_var', None)
@@ -200,8 +239,50 @@ class ReBatchNorm(nn.BatchNorm2d):
 
 
 class ReGroupNorm(nn.GroupNorm):
-    def __init__(self, num_groups, num_channels, r=1., affine=True, modified=True):
+    def __init__(self, num_channels, num_groups=32, r=1., affine=True, modified=True):
         super(ReGroupNorm, self).__init__(
+            num_groups, num_channels, affine)
+        self.r = r
+        self.modified = modified
+        self.register_buffer('before_mean', None)
+        self.register_buffer('before_var', None)
+        self.register_buffer('after_mean', None)
+        self.register_buffer('after_var', None)
+
+    def forward(self, input):
+        b = input.size(0)
+        init_size = input.size()
+        input = input.view(b, self.num_groups, -1)
+        s = input.size(2)
+        mean = input.mean(2)
+        var = input.var(2, unbiased=False)
+
+        input = (input - mean[:, :, None]) / torch.sqrt(var[:, :, None]).clamp(min=self.r)
+
+        if not self.training:
+            self.before_mean = mean
+            self.before_var = var
+            self.after_mean = input.mean(2)
+            self.after_var = input.var(2, unbiased=False)
+
+        input = input.view(init_size)
+        if self.affine:
+            if len(init_size) == 2:
+                input = input * self.weight[None, :] + self.bias[None, :]
+            elif len(init_size) == 4:
+                input = input * self.weight[None, :, None, None] + self.bias[None, :, None, None]
+            else:
+                raise NotImplementedError("Only 1D and 2D groupnorm with affine")
+
+        if self.modified:
+            input = input * s / (s - 1)
+        return input
+
+
+class ReGroupNorm2(nn.GroupNorm):
+    def __init__(self, num_channels, group_size=2, r=1., affine=True, modified=True):
+        num_groups = num_channels // group_size
+        super(ReGroupNorm2, self).__init__(
             num_groups, num_channels, affine)
         self.r = r
         self.modified = modified
@@ -246,7 +327,9 @@ def get_norm_layer(norm_layer=None, **kwargs):
     elif norm_layer == "ln":
         norm_layer = partial(GroupNorm, 1)
     elif norm_layer == "gn":
-        norm_layer = partial(GroupNorm, 32)
+        norm_layer = partial(GroupNorm, **kwargs)
+    elif norm_layer == "gn":
+        norm_layer = partial(GroupNorm, **kwargs)
     elif norm_layer == "bn-torch":
         norm_layer = nn.BatchNorm2d
     elif norm_layer == "ln-torch":
@@ -258,7 +341,9 @@ def get_norm_layer(norm_layer=None, **kwargs):
     elif norm_layer == "reln":
         norm_layer = partial(ReGroupNorm, 1, **kwargs)
     elif norm_layer == "regn":
-        norm_layer = partial(ReGroupNorm, 32, **kwargs)
+        norm_layer = partial(ReGroupNorm, **kwargs)
+    elif norm_layer == "regn2":
+        norm_layer = partial(ReGroupNorm2, **kwargs)
     else:
         raise NotImplementedError
 
@@ -266,6 +351,9 @@ def get_norm_layer(norm_layer=None, **kwargs):
 
 
 if __name__ == '__main__':
-    gn = ReGroupNorm(3, 9, modified=True)
-    x = torch.randn(1, 9, 3, 3)
-    gn(x)
+    kwargs = {"group_size": 4}
+    norm = get_norm_layer(norm_layer="regn2", **kwargs)
+    regn = norm(64)
+    x = torch.randn(1, 64, 1, 1)
+    print(regn)
+    print(regn(x).size())
