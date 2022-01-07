@@ -6,15 +6,15 @@ from models import norm_layer
 
 
 @torch.no_grad()
-def naive_lip(model: nn.Module, n_iter: int = 5, eps=1e-3):
+def naive_lip(model: nn.Module, n_iter: int = 100, eps=1e-3, bs=100):
     lip = -1
     for i in range(n_iter):
-        x1 = torch.randn(100, 3, 32, 32)
-        alpha = torch.rand(100, 3, 32, 32) * eps
+        x1 = torch.randn(bs, 3, 32, 32)
+        alpha = torch.rand(bs, 3, 32, 32) * eps
 
         y1, y2 = model(x1), model(x1 + alpha)
-        denominator = torch.linalg.vector_norm(alpha.view(100, -1), ord=2, dim=1)
-        numerator = torch.linalg.vector_norm((y2-y1).view(100, -1), ord=2, dim=1)
+        denominator = torch.linalg.vector_norm(alpha.view(bs, -1), ord=2, dim=1)
+        numerator = torch.linalg.vector_norm((y2-y1).view(bs, -1), ord=2, dim=1)
         lip = max(lip, torch.div(numerator, denominator).max().item())
 
     return lip

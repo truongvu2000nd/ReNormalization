@@ -17,6 +17,7 @@ import wandb
 from collections import OrderedDict
 
 from models import *
+from utils import naive_lip
 
 
 PROJECT_NAME = 'ReNorm5.3'
@@ -270,3 +271,5 @@ if __name__ == '__main__':
             log_norm_state()
     
     log_norm_state()
+    lip = naive_lip(net, n_iter=100, eps=1e-7, bs=100)
+    wandb.run.summary["lip"] = lip
