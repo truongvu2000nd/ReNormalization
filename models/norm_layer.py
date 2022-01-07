@@ -325,11 +325,11 @@ def get_norm_layer(norm_layer=None, **kwargs):
     if norm_layer == "bn" or norm_layer is None:
         norm_layer = BatchNorm
     elif norm_layer == "ln":
-        norm_layer = partial(GroupNorm, 1)
+        norm_layer = partial(GroupNorm, num_groups=1)
     elif norm_layer == "gn":
         norm_layer = partial(GroupNorm, **kwargs)
-    elif norm_layer == "gn":
-        norm_layer = partial(GroupNorm, **kwargs)
+    elif norm_layer == "gn2":
+        norm_layer = partial(GroupNorm2, **kwargs)
     elif norm_layer == "bn-torch":
         norm_layer = nn.BatchNorm2d
     elif norm_layer == "ln-torch":
@@ -339,7 +339,7 @@ def get_norm_layer(norm_layer=None, **kwargs):
     elif norm_layer == "rebn":
         norm_layer = partial(ReBatchNorm, **kwargs)
     elif norm_layer == "reln":
-        norm_layer = partial(ReGroupNorm, 1, **kwargs)
+        norm_layer = partial(ReGroupNorm, num_groups=1, **kwargs)
     elif norm_layer == "regn":
         norm_layer = partial(ReGroupNorm, **kwargs)
     elif norm_layer == "regn2":
