@@ -34,6 +34,7 @@ parser.add_argument('--n_epochs', default=100, type=int, help='num epochs')
 parser.add_argument('--r', default=None, type=float, help='renorm param r')
 parser.add_argument('--log_norm_state_every', default=100, type=int)
 parser.add_argument('--use_scheduler', action='store_true', help="use learning rate scheduler")
+parser.add_argument('--watch_model', action='store_true', help="watch model gradients")
 parser.add_argument('--wandb_group', default="", type=str, help='wandb group')
 
 args = parser.parse_args()
@@ -45,7 +46,9 @@ else:
                      dir=args.save_dir, config=args.config)
 config = wandb.config
 if not args.resume:
-    config.update({"lr": args.lr, "n_epochs": args.n_epochs, "model_kwargs": {"r": args.r}}, allow_val_change=True)
+    config.update({"lr": args.lr, "n_epochs": args.n_epochs,
+                   "model_kwargs": {"r": args.r}, "watch_model": args.watch_model}, 
+                   allow_val_change=True)
     config.use_scheduler = args.use_scheduler
     config.log_norm_state_every = args.log_norm_state_every
 print(config)
