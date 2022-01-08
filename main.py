@@ -156,6 +156,13 @@ def train(epoch):
             wandb.log({
                 "train_loss": train_loss/(batch_idx+1), 
                 "train_acc": 100.*correct/total}, step=global_step)
+
+            total_norm = 0.0
+            for p in net.parameters():
+                param_norm = p.grad.detach().data.norm(2)
+                total_norm += param_norm.item() ** 2
+            total_norm = total_norm ** 0.5
+            wandb.log({"total_grad_norm": total_norm}, step=global_step)
     print("End of epoch {} | Training time: {:.2f}s".format(epoch, time.time() - start_time))
 
 
