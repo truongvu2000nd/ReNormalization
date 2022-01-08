@@ -292,6 +292,7 @@ if __name__ == '__main__':
     epoch = checkpoint['epoch']
     print(epoch)
     assert epoch == 99
+    lips = []
     for i in range(5):
         lips.append(naive_lip(net, n_iter=100, eps=1e-7, bs=100, device=device))
     lips = np.array(lips)
