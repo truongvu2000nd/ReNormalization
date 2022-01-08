@@ -273,12 +273,28 @@ if __name__ == '__main__':
             log_norm_state()
     
     log_norm_state()
-    # lips = []
-    # print("Computing lip...")
-    # for i in range(5):
-    #     lips.append(naive_lip(net, n_iter=100, eps=1e-7, bs=100, device=device))
-    # lips = np.array(lips)
-    # lip_mean = np.mean(lips)
-    # lip_std = np.std(lips)
-    # wandb.run.summary["lip_mean"] = lip_mean
-    # wandb.run.summary["lip_std"] = lip_std
+    net.eval()
+    lips = []
+    print("Computing lip...")
+    for i in range(5):
+        lips.append(naive_lip(net, n_iter=100, eps=1e-7, bs=100, device=device))
+    lips = np.array(lips)
+    lip_mean = np.mean(lips)
+    lip_std = np.std(lips)
+    wandb.run.summary["lip_mean"] = lip_mean
+    wandb.run.summary["lip_std"] = lip_std
+    print(lips)
+
+    checkpoint = torch.load('checkpoint/last.pth')
+    missing_keys, _  = net.load_state_dict(checkpoint['net_state_dict'], strict=False)
+    print(missing_keys)
+    net.eval()
+    epoch = checkpoint['epoch']
+    print(epoch)
+    assert epoch == 99
+    for i in range(5):
+        lips.append(naive_lip(net, n_iter=100, eps=1e-7, bs=100, device=device))
+    lips = np.array(lips)
+    lip_mean = np.mean(lips)
+    lip_std = np.std(lips)
+    print(lips)

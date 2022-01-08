@@ -5,6 +5,7 @@ import os
 import numpy as np
 from models import *
 from utils import naive_lip
+from tqdm import tqdm
 
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
@@ -38,3 +39,36 @@ lip_mean = np.mean(lips)
 lip_std = np.std(lips)
 wandb.run.summary["lip_mean"] = lip_mean
 wandb.run.summary["lip_std"] = lip_std
+
+
+# for param in net.parameters():
+#     param.requires_grad_(False)
+
+# bs = 100
+# x1 = torch.randn(bs, 3, 32, 32, device=device)
+# alpha = torch.rand(bs, 3, 32, 32, device=device, requires_grad=True)
+
+# pbar = tqdm(range(1000))
+# best_lip = -1
+# try:
+#     for i in pbar:
+#         delta = (alpha * 2 - 1) * 1e-7
+#         y1, y2 = net(x1), net(x1 + delta)
+#         denominator = torch.linalg.vector_norm(delta.view(bs, -1), ord=2, dim=1)
+#         numerator = torch.linalg.vector_norm((y2-y1).view(bs, -1), ord=2, dim=1)
+#         lip = - torch.div(numerator, denominator).max()
+#         lip.backward()
+#         with torch.no_grad():
+#             alpha -= alpha.grad * 0.05
+#             alpha.grad.zero_()
+#         pbar.set_postfix({'lip': lip.item()})
+#         best_lip = max(best_lip, -lip.item())
+# except KeyboardInterrupt:
+#     print("-" * 89)
+#     print("Exiting")
+
+#     print(best_lip)
+#     print(alpha.max(), alpha.min())
+
+# print(best_lip)
+# print(alpha.max(), alpha.min())
