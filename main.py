@@ -158,11 +158,10 @@ def train(epoch):
                 "train_acc": 100.*correct/total}, step=global_step)
 
             # total_norm = 0.0
+        if (batch_idx + 1) % 100 == 0:
             for name, p in net.named_parameters():
-                param_norm = p.grad.detach().data.norm(2)
-                total_norm += param_norm.item() ** 2
-            total_norm = total_norm ** 0.5
-            wandb.log({"total_grad_norm": total_norm}, step=global_step)
+                param_norm = p.grad.detach().data.norm(float('inf'))
+                wandb.log({f"gradient/{name}": param_norm}, step=global_step)
     print("End of epoch {} | Training time: {:.2f}s".format(epoch, time.time() - start_time))
 
 
