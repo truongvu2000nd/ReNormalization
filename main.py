@@ -20,7 +20,7 @@ from models import *
 from utils import naive_lip
 
 
-PROJECT_NAME = 'GroupNorm'
+PROJECT_NAME = 'ReNorm5.3-VGG'
 
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
@@ -157,8 +157,8 @@ def train(epoch):
                 "train_loss": train_loss/(batch_idx+1), 
                 "train_acc": 100.*correct/total}, step=global_step)
 
-            total_norm = 0.0
-            for p in net.parameters():
+            # total_norm = 0.0
+            for name, p in net.named_parameters():
                 param_norm = p.grad.detach().data.norm(2)
                 total_norm += param_norm.item() ** 2
             total_norm = total_norm ** 0.5
@@ -231,6 +231,11 @@ def log_norm_state():
     if config.norm_type in ["bn", "rebn"]:
         track_buffers += ["running_mean", "running_var"]
 
+    if config.norm_type == "no-norm":
+        track_buffers = ["before_mean_bn", "before_var_bn", 'before_mean_gn_2', 
+        'before_var_gn_2', 'before_mean_gn_4', 'before_var_gn_4',
+        'before_mean_gn_8', 'before_var_gn_8', 'before_mean_gn_16', 'before_var_gn_16']
+
     log_dicts = []
     for batch_idx, (inputs, targets) in enumerate(testloader):
         inputs, targets = inputs.to(device), targets.to(device)
@@ -280,29 +285,3 @@ if __name__ == '__main__':
             log_norm_state()
     
     log_norm_state()
-    net.eval()
-    lips = []
-    print("Computing lip...")
-    for i in range(5):
-        lips.append(naive_lip(net, n_iter=100, eps=1e-7, bs=100, device=device))
-    lips = np.array(lips)
-    lip_mean = np.mean(lips)
-    lip_std = np.std(lips)
-    wandb.run.summary["lip_mean"] = lip_mean
-    wandb.run.summary["lip_std"] = lip_std
-    print(lips)
-
-    checkpoint = torch.load('checkpoint/last.pth')
-    missing_keys, _  = net.load_state_dict(checkpoint['net_state_dict'], strict=False)
-    print(missing_keys)
-    net.eval()
-    epoch = checkpoint['epoch']
-    print(epoch)
-    assert epoch == 99
-    lips = []
-    for i in range(5):
-        lips.append(naive_lip(net, n_iter=100, eps=1e-7, bs=100, device=device))
-    lips = np.array(lips)
-    lip_mean = np.mean(lips)
-    lip_std = np.std(lips)
-    print(lips)

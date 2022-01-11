@@ -8,6 +8,44 @@ import torch.nn.functional as F
 from functools import partial
 
 
+class NoNorm(nn.Module):
+    def __init__(self, num_channels):
+        super().__init__()
+        self.num_channels = num_channels
+        self.register_buffer('before_mean_bn', None)
+        self.register_buffer('before_var_bn', None)
+
+        self.register_buffer('before_mean_gn_2', None)
+        self.register_buffer('before_var_gn_2', None)
+        self.register_buffer('before_mean_gn_4', None)
+        self.register_buffer('before_var_gn_4', None)
+        self.register_buffer('before_mean_gn_8', None)
+        self.register_buffer('before_var_gn_8', None)
+        self.register_buffer('before_mean_gn_16', None)
+        self.register_buffer('before_var_gn_16', None)
+
+    def forward(self, x):
+        self.before_mean_bn = x.mean([0, 2, 3])
+        self.before_var_bn = x.var([0, 2, 3], unbiased=False)
+
+        input = x.view(x.size(0), self.num_channels // 2, -1)
+        self.before_mean_gn_2 = input.mean(2)
+        self.before_var_gn_2 = input.var(2, unbiased=False)
+
+        input = x.view(x.size(0), self.num_channels // 4, -1)
+        self.before_mean_gn_4 = input.mean(2)
+        self.before_var_gn_4 = input.var(2, unbiased=False)
+
+        input = x.view(x.size(0), self.num_channels // 8, -1)
+        self.before_mean_gn_8 = input.mean(2)
+        self.before_var_gn_8 = input.var(2, unbiased=False)
+
+        input = x.view(x.size(0), self.num_channels // 16, -1)
+        self.before_mean_gn_16 = input.mean(2)
+        self.before_var_gn_16 = input.var(2, unbiased=False)
+        return x
+
+
 class BatchNorm(nn.BatchNorm2d):
     def __init__(self, num_features, input_type="2d", eps=1e-5, momentum=0.1,
                  affine=True, track_running_stats=True):
@@ -344,6 +382,8 @@ def get_norm_layer(norm_layer=None, **kwargs):
         norm_layer = partial(ReGroupNorm, **kwargs)
     elif norm_layer == "regn2":
         norm_layer = partial(ReGroupNorm2, **kwargs)
+    elif norm_layer == "no_norm":
+        norm_layer = NoNorm
     else:
         raise NotImplementedError
 
