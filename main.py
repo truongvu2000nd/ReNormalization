@@ -34,8 +34,9 @@ parser.add_argument('--n_epochs', default=100, type=int, help='num epochs')
 # parser.add_argument('--r', default=None, type=float, help='renorm param r')
 parser.add_argument('--log_norm_state_every', default=100, type=int)
 parser.add_argument('--use_scheduler', action='store_true', help="use learning rate scheduler")
-parser.add_argument('--watch_model', action='store_true', help="watch model gradients")
+parser.add_argument('--watch_model', action='store_true', help="watch model gradients wandb")
 parser.add_argument('--wandb_group', default="", type=str, help='wandb group')
+parser.add_argument('--log_grad_norm', action='store_true', help="watch model gradients")
 
 args = parser.parse_args()
 
@@ -158,13 +159,14 @@ def train(epoch):
                 "train_acc": 100.*correct/total}, step=global_step)
 
         total_norm = 0.0
-        if (batch_idx + 1) % 150 == 0:
-            for name, p in net.named_parameters():
-                param_norm = p.grad.detach().data.norm(float('inf'))
-                total_norm += param_norm
-                wandb.log({f"gradient/{name}": param_norm}, step=global_step)
-        
-            wandb.log({f"gradient/total": total_norm}, step=global_step)
+        if args.log_grad_norm:
+            if (batch_idx + 1) % 150 == 0:
+                for name, p in net.named_parameters():
+                    param_norm = p.grad.detach().data.norm(float('inf'))
+                    total_norm += param_norm
+                    wandb.log({f"gradient/{name}": param_norm}, step=global_step)
+            
+                wandb.log({f"gradient/total": total_norm}, step=global_step)
     print("End of epoch {} | Training time: {:.2f}s".format(epoch, time.time() - start_time))
 
 
