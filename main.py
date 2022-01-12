@@ -20,7 +20,7 @@ from models import *
 from utils import naive_lip
 
 
-PROJECT_NAME = 'ReNorm5.3-VGG'
+PROJECT_NAME = 'ReNorm5.4-VGG'
 
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
@@ -157,11 +157,14 @@ def train(epoch):
                 "train_loss": train_loss/(batch_idx+1), 
                 "train_acc": 100.*correct/total}, step=global_step)
 
-            # total_norm = 0.0
-        if (batch_idx + 1) % 100 == 0:
+        total_norm = 0.0
+        if (batch_idx + 1) % 150 == 0:
             for name, p in net.named_parameters():
                 param_norm = p.grad.detach().data.norm(float('inf'))
+                total_norm += param_norm
                 wandb.log({f"gradient/{name}": param_norm}, step=global_step)
+        
+            wandb.log({f"gradient/total": total_norm}, step=global_step)
     print("End of epoch {} | Training time: {:.2f}s".format(epoch, time.time() - start_time))
 
 
@@ -221,19 +224,12 @@ def test(epoch):
 def log_norm_state():
     net.eval()
     print("\nLogging normalization layer states...")
-    track_buffers = [
-        "before_mean",
-        "before_var",
-        "after_mean",
-        "after_var",
-    ]
+    track_buffers = ["before_var", "after_var"]
     if config.norm_type in ["bn", "rebn"]:
-        track_buffers += ["running_mean", "running_var"]
+        track_buffers += ["running_var"]
 
     if config.norm_type == "no-norm":
-        track_buffers = ["before_mean_bn", "before_var_bn", 'before_mean_gn_2', 
-        'before_var_gn_2', 'before_mean_gn_4', 'before_var_gn_4',
-        'before_mean_gn_8', 'before_var_gn_8', 'before_mean_gn_16', 'before_var_gn_16']
+        track_buffers = ["before_var_bn", "before_var_gn_2", "before_var_gn_4", "before_var_gn_8", "before_var_gn_16"]
 
     log_dicts = []
     for batch_idx, (inputs, targets) in enumerate(testloader):
@@ -244,7 +240,7 @@ def log_norm_state():
         for name, p in net.named_buffers():
             for n in track_buffers:
                 if n in name:
-                    flattened_p = torch.flatten(p).detach().float().clamp(max=1000)
+                    flattened_p = torch.flatten(p).detach().float()
                     layer_name = name[: name.rindex(".")]
                     log_dict[f"{n}/{layer_name}"] = flattened_p
         log_dicts.append(log_dict)
