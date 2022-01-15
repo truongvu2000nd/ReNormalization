@@ -20,7 +20,7 @@ from models import *
 from utils import naive_lip
 
 
-PROJECT_NAME = 'ReNorm5.4-VGG'
+PROJECT_NAME = 'Wrap'
 
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
@@ -158,9 +158,8 @@ def train(epoch):
                 "train_loss": train_loss/(batch_idx+1), 
                 "train_acc": 100.*correct/total}, step=global_step)
 
-        total_norm = 0.0
-        if args.log_grad_norm:
-            if (batch_idx + 1) % 150 == 0:
+            total_norm = 0.0
+            if args.log_grad_norm:
                 for name, p in net.named_parameters():
                     param_norm = p.grad.detach().data.norm(float('inf'))
                     total_norm += param_norm
