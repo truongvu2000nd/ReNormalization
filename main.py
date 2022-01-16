@@ -14,13 +14,14 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 import wandb
+from tqdm import tqdm
 from collections import OrderedDict
 
 from models import *
 from utils import naive_lip
 
 
-PROJECT_NAME = 'Wrap'
+PROJECT_NAME = 'Lipschitz'
 
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
@@ -37,6 +38,7 @@ parser.add_argument('--use_scheduler', action='store_true', help="use learning r
 parser.add_argument('--watch_model', action='store_true', help="watch model gradients wandb")
 parser.add_argument('--wandb_group', default="", type=str, help='wandb group')
 parser.add_argument('--log_grad_norm', action='store_true', help="watch model gradients")
+parser.add_argument('--compute_lip', action='store_true', help="estimate lipschitz")
 
 args = parser.parse_args()
 
@@ -281,3 +283,20 @@ if __name__ == '__main__':
             log_norm_state()
     
     log_norm_state()
+    if args.compute_lip:
+        net.eval()
+        testloader = torch.utils.data.DataLoader(
+            testset, batch_size=1, shuffle=False, num_workers=2)
+        max_norm = -1
+        pbar = tqdm(testloader)
+        for p in net.parameters():
+            p.requires_grad_(False)
+        for x, _ in pbar:
+            x = x.view(-1).to(device)
+            x.requires_grad_(True)
+            jacob = torch.autograd.functional.jacobian(lambda x: net(x.view(1, 3, 32, 32)).view(-1), x)
+            grad_norm = torch.linalg.matrix_norm(jacob, ord=float('inf')).item()
+            if grad_norm > max_norm:
+                max_norm = grad_norm
+                pbar.set_description("Max norm: {:.6f}".format(max_norm))
+        wandb.run.summary["lip"] = max_norm
