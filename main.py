@@ -39,6 +39,7 @@ parser.add_argument('--watch_model', action='store_true', help="watch model grad
 parser.add_argument('--wandb_group', default="", type=str, help='wandb group')
 parser.add_argument('--log_grad_norm', action='store_true', help="watch model gradients")
 parser.add_argument('--compute_lip', action='store_true', help="estimate lipschitz")
+parser.add_argument('--clip_grad', action='store_true', help="clipping gradient")
 
 args = parser.parse_args()
 
@@ -146,6 +147,8 @@ def train(epoch):
         outputs = net(inputs)
         loss = criterion(outputs, targets)
         loss.backward()
+        if args.clip_grad:
+            torch.nn.utils.clip_grad_norm_(net.parameters(), 4.)
         optimizer.step()
 
         train_loss += loss.item()
