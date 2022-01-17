@@ -21,7 +21,7 @@ from models import *
 from utils import naive_lip
 
 
-PROJECT_NAME = 'Lipschitz'
+PROJECT_NAME = 'ClipGrad'
 
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
