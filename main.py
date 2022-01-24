@@ -156,6 +156,12 @@ def train(epoch):
         total += targets.size(0)
         correct += predicted.eq(targets).sum().item()
 
+        if args.clip_weight and epoch >= 5:
+            with torch.no_grad():
+                for name, param in net.named_parameters():
+                    if "weight" in name:
+                        param.clamp_(-0.5, 0.5)
+
         if (batch_idx + 1) % config.log_every == 0:
             print('[Train]-[%d/%d]: Loss: %.3f | Acc: %.3f%% (%d/%d)' 
                     % (batch_idx, len(trainloader), train_loss/(batch_idx+1), 100.*correct/total, correct, total))
