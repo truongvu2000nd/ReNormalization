@@ -265,8 +265,6 @@ def log_norm_state():
     for stat in track_buffers:
         boxes = np.array([val.cpu().numpy() for key, val in log_norms.items() if stat in key], dtype=object).T
         fig = plt.figure(dpi=150)
-        np.save(f'boxes/{stat}.npy', boxes)
-        wandb.save(f'boxes/{stat}.npy')
         plt.boxplot(boxes)
         plt.xlabel("layer")
         plt.ylabel(stat)
