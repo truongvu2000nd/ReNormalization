@@ -40,6 +40,8 @@ parser.add_argument('--wandb_group', default="", type=str, help='wandb group')
 parser.add_argument('--log_grad_norm', action='store_true', help="watch model gradients")
 parser.add_argument('--compute_lip', action='store_true', help="estimate lipschitz")
 parser.add_argument('--clip_grad', action='store_true', help="clipping gradient")
+parser.add_argument('--clip_weight', action='store_true', help="clip weight")
+
 
 args = parser.parse_args()
 
