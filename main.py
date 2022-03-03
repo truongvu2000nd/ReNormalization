@@ -17,7 +17,7 @@ import wandb
 from tqdm import tqdm
 from collections import OrderedDict
 
-from models import *
+from models import VGG, ResNet18
 from utils import naive_lip
 
 
@@ -32,7 +32,6 @@ parser.add_argument('--save_dir', default="", type=str, help='where to save wand
 parser.add_argument('--config', default="config.yaml", type=str, help='wandb config file')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--n_epochs', default=100, type=int, help='num epochs')
-# parser.add_argument('--r', default=None, type=float, help='renorm param r')
 parser.add_argument('--log_norm_state_every', default=100, type=int)
 parser.add_argument('--use_scheduler', action='store_true', help="use learning rate scheduler")
 parser.add_argument('--watch_model', action='store_true', help="watch model gradients wandb")
@@ -99,8 +98,8 @@ classes = ('plane', 'car', 'bird', 'cat', 'deer',
 # -----------------------Model-----------------------
 # ---------------------------------------------------
 print('==> Building model..')
-net = VGG('VGG16', norm_layer=config.norm_type, **config.model_kwargs)
-# net = ResNet18(norm_layer=config.norm_type, **config.model_kwargs)
+# net = VGG('VGG16', norm_layer=config.norm_type, **config.model_kwargs)
+net = ResNet18(norm_layer=config.norm_type, **config.model_kwargs)
 net = net.to(device)
 if device == 'cuda':
     cudnn.benchmark = True
