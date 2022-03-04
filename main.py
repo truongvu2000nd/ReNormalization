@@ -21,7 +21,7 @@ from models import VGG, ResNet18
 from utils import naive_lip
 
 
-PROJECT_NAME = 'ClipWeight'
+PROJECT_NAME = 'ResNet'
 
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
