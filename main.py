@@ -27,6 +27,7 @@ PROJECT_NAME = 'ResNet'
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
 parser.add_argument('--resume', '-r', action='store_true',
                     help='resume from checkpoint')
+parser.add_argument('--proj_name', default="", type=str, help='wandb project name')
 parser.add_argument('--id', default="", type=str, help='wandb_id (if set --resume)')
 parser.add_argument('--save_dir', default="", type=str, help='where to save wandb logs locally')
 parser.add_argument('--config', default="config.yaml", type=str, help='wandb config file')
@@ -43,6 +44,9 @@ parser.add_argument('--clip_weight', action='store_true', help="clip weight")
 
 
 args = parser.parse_args()
+
+if args.proj_name:
+    PROJECT_NAME = args.proj_name
 
 if args.resume:
     run = wandb.init(project=PROJECT_NAME, dir=args.save_dir, resume=True, id=args.id)
@@ -294,6 +298,9 @@ if __name__ == '__main__':
     
     # log_norm_state()
     if args.compute_lip:
+        checkpoint = torch.load("checkpoint/best.pth")
+        missing_keys, _  = net.load_state_dict(checkpoint['net_state_dict'], strict=False)
+        print(missing_keys)
         net.eval()
         testloader = torch.utils.data.DataLoader(
             testset, batch_size=1, shuffle=False, num_workers=2)
