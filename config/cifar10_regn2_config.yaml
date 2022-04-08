@@ -9,9 +9,9 @@ log_every:
 
 # model
 norm_type: 
-  value: reln
+  value: regn
 model_kwargs: 
-  value: {"r": 1.0}
+  value: {"r": 0.8, "group_size": 2}
 
 # optimizer
 lr: 
