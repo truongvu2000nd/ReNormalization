@@ -16,8 +16,9 @@ import matplotlib.pyplot as plt
 import wandb
 from tqdm import tqdm
 from collections import OrderedDict
+from functools import partial
 
-from models import VGG, ResNet18
+from models import VGG, ResNet18, resnet20, resnet32, resnet44, resnet56, resnet110, resnet1202
 from utils import naive_lip
 
 
@@ -102,8 +103,18 @@ classes = ('plane', 'car', 'bird', 'cat', 'deer',
 # -----------------------Model-----------------------
 # ---------------------------------------------------
 print('==> Building model..')
-# net = VGG('VGG16', norm_layer=config.norm_type, **config.model_kwargs)
-net = ResNet18(norm_layer=config.norm_type, **config.model_kwargs)
+net_dict = {
+    "vgg": partial(VGG, 'VGG16'),
+    "Resnet18": ResNet18,
+    "resnet20": resnet20, 
+    "resnet32": resnet32, 
+    "resnet44": resnet44, 
+    "resnet56": resnet56, 
+    "resnet110": resnet110, 
+    "resnet1202": resnet1202
+
+}
+net = net_dict[config.arch](norm_layer=config.norm_type, **config.model_kwargs)
 net = net.to(device)
 if device == 'cuda':
     cudnn.benchmark = True

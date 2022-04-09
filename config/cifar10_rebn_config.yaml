@@ -8,6 +8,8 @@ log_every:
   value: 50
 
 # model
+arch:
+  value: resnet20
 norm_type: 
   value: rebn
 model_kwargs: 
