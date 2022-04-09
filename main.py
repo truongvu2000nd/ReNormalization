@@ -34,6 +34,7 @@ parser.add_argument('--save_dir', default="", type=str, help='where to save wand
 parser.add_argument('--config', default="config.yaml", type=str, help='wandb config file')
 parser.add_argument('--arch', default="ResNet18", type=str, help='model architecture')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
+parser.add_argument('--r_renorm', default=0.1, type=float, help='learning rate')
 parser.add_argument('--n_epochs', default=100, type=int, help='num epochs')
 parser.add_argument('--log_norm_state_every', default=100, type=int)
 parser.add_argument('--use_scheduler', action='store_true', help="use learning rate scheduler")
@@ -57,7 +58,8 @@ else:
                      dir=args.save_dir, config=args.config)
 config = wandb.config
 if not args.resume:
-    config.update({"lr": args.lr, "n_epochs": args.n_epochs, "watch_model": args.watch_model, "arch": args.arch}, 
+    config.update({"lr": args.lr, "n_epochs": args.n_epochs, "watch_model": args.watch_model, "arch": args.arch,
+                   "model_kwargs": {"r": args.r_renorm}}, 
                    allow_val_change=True)
     config.use_scheduler = args.use_scheduler
     config.log_norm_state_every = args.log_norm_state_every
