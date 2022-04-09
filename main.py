@@ -32,7 +32,7 @@ parser.add_argument('--proj_name', default="", type=str, help='wandb project nam
 parser.add_argument('--id', default="", type=str, help='wandb_id (if set --resume)')
 parser.add_argument('--save_dir', default="", type=str, help='where to save wandb logs locally')
 parser.add_argument('--config', default="config.yaml", type=str, help='wandb config file')
-parser.add_argument('--arch', default="resnet20", type=str, help='model architecture')
+parser.add_argument('--arch', default="ResNet18", type=str, help='model architecture')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--n_epochs', default=100, type=int, help='num epochs')
 parser.add_argument('--log_norm_state_every', default=100, type=int)
@@ -106,13 +106,13 @@ classes = ('plane', 'car', 'bird', 'cat', 'deer',
 print('==> Building model..')
 net_dict = {
     "vgg": partial(VGG, 'VGG16'),
-    "Resnet18": ResNet18,
-    "resnet20": resnet20, 
-    "resnet32": resnet32, 
-    "resnet44": resnet44, 
-    "resnet56": resnet56, 
-    "resnet110": resnet110, 
-    "resnet1202": resnet1202
+    "ResNet18": ResNet18,
+    # "resnet20": resnet20, 
+    # "resnet32": resnet32, 
+    # "resnet44": resnet44, 
+    # "resnet56": resnet56, 
+    # "resnet110": resnet110, 
+    # "resnet1202": resnet1202
 
 }
 net = net_dict[config.arch](norm_layer=config.norm_type, **config.model_kwargs)
