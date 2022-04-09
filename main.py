@@ -32,6 +32,7 @@ parser.add_argument('--proj_name', default="", type=str, help='wandb project nam
 parser.add_argument('--id', default="", type=str, help='wandb_id (if set --resume)')
 parser.add_argument('--save_dir', default="", type=str, help='where to save wandb logs locally')
 parser.add_argument('--config', default="config.yaml", type=str, help='wandb config file')
+parser.add_argument('--arch', default="resnet20", type=str, help='model architecture')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--n_epochs', default=100, type=int, help='num epochs')
 parser.add_argument('--log_norm_state_every', default=100, type=int)
@@ -56,7 +57,7 @@ else:
                      dir=args.save_dir, config=args.config)
 config = wandb.config
 if not args.resume:
-    config.update({"lr": args.lr, "n_epochs": args.n_epochs, "watch_model": args.watch_model}, 
+    config.update({"lr": args.lr, "n_epochs": args.n_epochs, "watch_model": args.watch_model, "arch": args.arch}, 
                    allow_val_change=True)
     config.use_scheduler = args.use_scheduler
     config.log_norm_state_every = args.log_norm_state_every
