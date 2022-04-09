@@ -9,7 +9,7 @@ log_every:
 
 # model
 arch:
-  value: resnet20
+  value: ResNet18
 norm_type: 
   value: gn
 model_kwargs: 
