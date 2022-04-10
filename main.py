@@ -149,7 +149,7 @@ optimizer = optim.SGD(net.parameters(), lr=config.lr,
                       momentum=0.9, weight_decay=config.weight_decay)
 
 if config.use_scheduler:
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config.n_epochs, eta_min=1e-4)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config.n_epochs, eta_min=5e-5)
 
 
 if wandb.run.resumed:
@@ -163,7 +163,7 @@ if wandb.run.resumed:
     best_acc = checkpoint['best_acc']
     if config.use_scheduler:
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-            optimizer, T_max=config.n_epochs, last_epoch=start_epoch, eta_min=1e-4
+            optimizer, T_max=config.n_epochs, last_epoch=start_epoch, eta_min=5e-5
         )
     
 
