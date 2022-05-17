@@ -11,7 +11,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from typing import Type, Any, Callable, Union, List, Optional
-from .norm_layer import get_norm_layer
+from norm_layer import get_norm_layer
 
 
 class BasicBlock(nn.Module):
@@ -37,9 +37,9 @@ class BasicBlock(nn.Module):
 
     def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)))
-        out = self.bn2(self.conv2(out))
+        out = self.conv2(out)
         out += self.shortcut(x)
-        out = F.relu(out)
+        out = F.relu(self.bn2(out))
         return out
 
 
@@ -137,3 +137,4 @@ if __name__ == '__main__':
 
     net = ResNet18(norm_layer="regn", r=0.8)
     summary(net, (1, 3, 32, 32), depth=4)
+    print([name for name, p in net.named_parameters()])

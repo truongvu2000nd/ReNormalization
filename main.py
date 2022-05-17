@@ -194,12 +194,6 @@ def train(epoch):
         total += targets.size(0)
         correct += predicted.eq(targets).sum().item()
 
-        if args.clip_weight and epoch >= 5:
-            with torch.no_grad():
-                for name, param in net.named_parameters():
-                    if "weight" in name:
-                        param.clamp_(-0.5, 0.5)
-
         if (batch_idx + 1) % config.log_every == 0:
             print('[Train]-[%d/%d]: Loss: %.3f | Acc: %.3f%% (%d/%d)' 
                     % (batch_idx, len(trainloader), train_loss/(batch_idx+1), 100.*correct/total, correct, total))
@@ -207,14 +201,11 @@ def train(epoch):
                 "train_loss": train_loss/(batch_idx+1), 
                 "train_acc": 100.*correct/total}, step=global_step)
 
-            total_norm = 0.0
             if args.log_grad_norm:
                 for name, p in net.named_parameters():
-                    param_norm = p.grad.detach().data.norm(float('inf'))
-                    total_norm += param_norm
+                    param_norm = p.grad.detach().data.max()
                     wandb.log({f"gradient/{name}": param_norm}, step=global_step)
             
-                wandb.log({f"gradient/total": total_norm}, step=global_step)
     print("End of epoch {} | Training time: {:.2f}s".format(epoch, time.time() - start_time))
 
 
@@ -337,7 +328,7 @@ if __name__ == '__main__':
         net.eval()
         testloader = torch.utils.data.DataLoader(
             testset, batch_size=1, shuffle=False, num_workers=2)
-        max_norm = -1
+        max_norm1, max_norm2 = -1, -1
         pbar = tqdm(testloader)
         for p in net.parameters():
             p.requires_grad_(False)
@@ -345,8 +336,12 @@ if __name__ == '__main__':
             x = x.view(-1).to(device)
             x.requires_grad_(True)
             jacob = torch.autograd.functional.jacobian(lambda x: net(x.view(1, 3, 32, 32)).view(-1), x)
-            grad_norm = torch.linalg.matrix_norm(jacob, ord=float('inf')).item()
-            if grad_norm > max_norm:
-                max_norm = grad_norm
-                pbar.set_description("Max norm: {:.6f}".format(max_norm))
-        wandb.run.summary["lip"] = max_norm
+            grad_norm1 = torch.linalg.matrix_norm(jacob, ord=float('inf')).item()
+            grad_norm2 = jacob.max().item()
+            if grad_norm1 > max_norm1:
+                max_norm1 = grad_norm1
+            if grad_norm2 > max_norm2:
+                max_norm2 = grad_norm2
+            pbar.set_description("Max norm1: {:.6f} {:.6f}".format(max_norm1, max_norm2))
+        wandb.run.summary["lip_max_norm"] = max_norm1
+        wandb.run.summary["lip_max_max_norm"] = max_norm2
