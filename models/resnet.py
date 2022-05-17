@@ -11,7 +11,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from typing import Type, Any, Callable, Union, List, Optional
-from norm_layer import get_norm_layer
+from .norm_layer import get_norm_layer
 
 
 class BasicBlock(nn.Module):
