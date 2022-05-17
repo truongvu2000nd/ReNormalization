@@ -52,10 +52,10 @@ if args.proj_name:
     PROJECT_NAME = args.proj_name
 
 if args.resume:
-    run = wandb.init(project=PROJECT_NAME, dir=args.save_dir, resume=True, id=args.id)
+    run = wandb.init(project=PROJECT_NAME, dir=args.save_dir, resume=True, id=args.id, entity="truongvu2000")
 else:
     run = wandb.init(project=PROJECT_NAME, group=args.wandb_group, 
-                     dir=args.save_dir, config=args.config)
+                     dir=args.save_dir, config=args.config, entity="truongvu2000")
 config = wandb.config
 if not args.resume:
     config.update({"lr": args.lr, "n_epochs": args.n_epochs, "watch_model": args.watch_model, "arch": args.arch}, 
