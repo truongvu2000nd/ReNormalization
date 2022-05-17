@@ -41,6 +41,7 @@ parser.add_argument('--use_scheduler', action='store_true', help="use learning r
 parser.add_argument('--watch_model', action='store_true', help="watch model gradients wandb")
 parser.add_argument('--wandb_group', default="", type=str, help='wandb group')
 parser.add_argument('--log_grad_norm', action='store_true', help="watch model gradients")
+parser.add_argument('--log_weight_norm', action='store_true', help="watch model weights")
 parser.add_argument('--compute_lip', action='store_true', help="estimate lipschitz")
 parser.add_argument('--clip_grad', action='store_true', help="clipping gradient")
 parser.add_argument('--clip_weight', action='store_true', help="clip weight")
@@ -203,8 +204,13 @@ def train(epoch):
 
             if args.log_grad_norm:
                 for name, p in net.named_parameters():
-                    param_norm = p.grad.detach().data.max()
-                    wandb.log({f"gradient/{name}": param_norm}, step=global_step)
+                    grad_norm = p.grad.detach().data.max()
+                    wandb.log({f"gradient_norm/{name}": grad_norm}, step=global_step)
+
+            if args.log_weight_norm:
+                for name, p in net.named_parameters():
+                    param_norm = p.detach().data.max()
+                    wandb.log({f"weight_norm/{name}": param_norm}, step=global_step)
             
     print("End of epoch {} | Training time: {:.2f}s".format(epoch, time.time() - start_time))
 
