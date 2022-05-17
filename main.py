@@ -92,12 +92,12 @@ if args.dataset == "cifar10":
     trainset = torchvision.datasets.CIFAR10(
         root=config.data_dir, train=True, download=True, transform=transform_train)
     trainloader = torch.utils.data.DataLoader(
-        trainset, batch_size=config.batch_size, shuffle=True, num_workers=2)
+        trainset, batch_size=config.batch_size, shuffle=True, num_workers=2, pin_memory=True)
 
     testset = torchvision.datasets.CIFAR10(
         root=config.data_dir, train=False, download=True, transform=transform_test)
     testloader = torch.utils.data.DataLoader(
-        testset, batch_size=100, shuffle=False, num_workers=2)
+        testset, batch_size=100, shuffle=False, num_workers=2, pin_memory=True)
 
 
 elif args.dataset == "svhn":
@@ -113,12 +113,12 @@ elif args.dataset == "svhn":
     trainset = torchvision.datasets.SVHN(
         root=config.data_dir, split='train', download=True, transform=transform_train)
     trainloader = torch.utils.data.DataLoader(
-        trainset, batch_size=config.batch_size, shuffle=True, num_workers=2)
+        trainset, batch_size=config.batch_size, shuffle=True, num_workers=2, pin_memory=True)
 
     testset = torchvision.datasets.SVHN(
         root=config.data_dir, split='test', download=True, transform=transform_test)
     testloader = torch.utils.data.DataLoader(
-        testset, batch_size=100, shuffle=False, num_workers=2)
+        testset, batch_size=100, shuffle=False, num_workers=2, pin_memory=True)
 
 
 # ---------------------------------------------------
