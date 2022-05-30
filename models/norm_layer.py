@@ -4,6 +4,17 @@ import torch.nn.functional as F
 from functools import partial
 
 
+class re_sigma(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, sigma, r):
+        return sigma.clamp(min=r)
+
+    @staticmethod
+    def backward(ctx, g):
+        # send the gradient g straight-through on the backward pass.
+        return g, None
+
+
 class BN(nn.BatchNorm2d):
     def __init__(self, num_features, eps=1e-5, momentum=0.1,
                  affine=True, track_running_stats=True):
@@ -91,7 +102,9 @@ class ReBN(nn.BatchNorm2d):
             mean = self.running_mean
             var = self.running_var
 
-        input = (input - mean[None, :, None, None]) / torch.sqrt(var[None, :, None, None]).clamp(min=self.r)
+        # input = (input - mean[None, :, None, None]) / torch.sqrt(var[None, :, None, None]).clamp(min=self.r)
+        sigma = re_sigma.apply(torch.sqrt(var[None, :, None, None] + self.eps), self.r)
+        input = (input - mean[None, :, None, None]) / sigma
 
         if self.affine:
             input = input * self.weight[None, :, None, None] + self.bias[None, :, None, None]
