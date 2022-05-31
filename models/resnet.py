@@ -143,6 +143,6 @@ def ResNet152(**kwargs: Any):
 if __name__ == '__main__':
     from torchinfo import summary
 
-    net = ResNet18(norm_layer="regn", r=0.8)
-    summary(net, (1, 3, 32, 32), depth=4)
-    print([name for name, p in net.named_parameters()])
+    net = ResNet34(norm_layer="rebn")
+    # summary(net, (1, 3, 32, 32), depth=4)
+    print(net)

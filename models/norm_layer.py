@@ -102,9 +102,7 @@ class ReBN(nn.BatchNorm2d):
             mean = self.running_mean
             var = self.running_var
 
-        # input = (input - mean[None, :, None, None]) / torch.sqrt(var[None, :, None, None]).clamp(min=self.r)
-        sigma = re_sigma.apply(torch.sqrt(var[None, :, None, None] + self.eps), self.r)
-        input = (input - mean[None, :, None, None]) / sigma
+        input = (input - mean[None, :, None, None]) / torch.sqrt(var[None, :, None, None] + self.eps).clamp(min=self.r)
 
         if self.affine:
             input = input * self.weight[None, :, None, None] + self.bias[None, :, None, None]
@@ -192,3 +190,26 @@ def get_norm_layer(norm_layer=None, **kwargs):
         raise NotImplementedError
 
     return norm_layer
+
+
+if __name__ == '__main__':
+    torch.manual_seed(1234)
+    conv1 = nn.Conv2d(3, 3, 1)
+    conv2 = nn.Conv2d(3, 3, 1)
+    x = torch.randn(1, 3, 2, 2)
+    optimizer = torch.optim.SGD([{'params': conv1.parameters()},{'params': conv2.parameters()}], lr=0.1)
+    # print(x)
+    rebn = ReBN(3, r=0.1)
+    bn = BN(3)
+
+    optimizer.zero_grad()
+    print("-------------------------------------")
+    out = conv2(rebn(conv1(x))).sum()
+    out.backward()
+    print(conv1.weight.grad)
+
+    optimizer.zero_grad()
+    print("-------------------------------------")
+    out = conv2(bn(conv1(x))).sum()
+    out.backward()
+    print(conv1.weight.grad)

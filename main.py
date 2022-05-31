@@ -18,7 +18,7 @@ from tqdm import tqdm
 from collections import OrderedDict
 from functools import partial
 
-from models import VGG, ResNet18, ResNet50, resnet20, resnet32, resnet44, resnet56, resnet110, resnet1202
+from models import VGG, ResNet18, ResNet34, ResNet50
 from utils import naive_lip
 
 
@@ -129,14 +129,8 @@ print('==> Building model..')
 net_dict = {
     "vgg": partial(VGG, 'VGG16'),
     "ResNet18": ResNet18,
+    "ResNet34": ResNet34,
     "ResNet50": ResNet50,
-    # "resnet20": resnet20, 
-    # "resnet32": resnet32, 
-    # "resnet44": resnet44, 
-    # "resnet56": resnet56, 
-    # "resnet110": resnet110, 
-    # "resnet1202": resnet1202
-
 }
 net = net_dict[config.arch](norm_layer=config.norm_type, **config.model_kwargs)
 net = net.to(device)
