@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from functools import partial
 
+from .norm_layer_cpp import BatchNormCPP
+
 
 class re_sigma(torch.autograd.Function):
     @staticmethod
@@ -186,6 +188,8 @@ def get_norm_layer(norm_layer=None, **kwargs):
         norm_layer = partial(ReBN, **kwargs)
     elif norm_layer == "regn":
         norm_layer = partial(ReGN, **kwargs)
+    elif norm_layer == "bn-cpp":
+        norm_layer = BatchNormCPP
     else:
         raise NotImplementedError
 
@@ -194,22 +198,3 @@ def get_norm_layer(norm_layer=None, **kwargs):
 
 if __name__ == '__main__':
     torch.manual_seed(1234)
-    conv1 = nn.Conv2d(3, 3, 1)
-    conv2 = nn.Conv2d(3, 3, 1)
-    x = torch.randn(1, 3, 2, 2)
-    optimizer = torch.optim.SGD([{'params': conv1.parameters()},{'params': conv2.parameters()}], lr=0.1)
-    # print(x)
-    rebn = ReBN(3, r=0.1)
-    bn = BN(3)
-
-    optimizer.zero_grad()
-    print("-------------------------------------")
-    out = conv2(rebn(conv1(x))).sum()
-    out.backward()
-    print(conv1.weight.grad)
-
-    optimizer.zero_grad()
-    print("-------------------------------------")
-    out = conv2(bn(conv1(x))).sum()
-    out.backward()
-    print(conv1.weight.grad)
