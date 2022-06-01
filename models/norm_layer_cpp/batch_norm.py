@@ -4,11 +4,10 @@ from torch.autograd import Function
 import torch
 from torch.nn.modules.batchnorm import _NormBase
 from torch.utils.cpp_extension import load
+import os
 
-batch_norm_cpp = load(name="batch_norm_cpp", sources=["batch_norm.cpp"])
-# import batch_norm_cpp
-
-torch.manual_seed(42)
+module_path = os.path.dirname(__file__)
+batch_norm_cpp = load(name="batch_norm_cpp", sources=[os.path.join(module_path, "batch_norm.cpp")])
 
 
 class BatchNormFunction(Function):

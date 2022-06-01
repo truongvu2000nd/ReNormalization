@@ -180,16 +180,18 @@ class ReGN(nn.GroupNorm):
 
 
 def get_norm_layer(norm_layer=None, **kwargs):
-    if norm_layer == "bn" or norm_layer is None:
+    if norm_layer == "bn":
         norm_layer = BN
+    elif norm_layer == "bn-torch":
+        norm_layer = nn.BatchNorm2d
+    elif norm_layer == "bn-cpp":
+        norm_layer = BatchNormCPP
     elif norm_layer == "gn":
         norm_layer = partial(GN, **kwargs)
     elif norm_layer == "rebn":
         norm_layer = partial(ReBN, **kwargs)
     elif norm_layer == "regn":
         norm_layer = partial(ReGN, **kwargs)
-    elif norm_layer == "bn-cpp":
-        norm_layer = BatchNormCPP
     else:
         raise NotImplementedError
 
