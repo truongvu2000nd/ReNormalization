@@ -2,30 +2,7 @@
 
 #include <vector>
 
-// using namespace torch::indexing;
-
-// s'(z) = (1 - s(z)) * s(z)
-torch::Tensor d_sigmoid(torch::Tensor z)
-{
-    auto s = torch::sigmoid(z);
-    return (1 - s) * s;
-}
-
-// tanh'(z) = 1 - tanh^2(z)
-torch::Tensor d_tanh(torch::Tensor z)
-{
-    return 1 - z.tanh().pow(2);
-}
-
-// elu'(z) = relu'(z) + { alpha * exp(z) if (alpha * (exp(z) - 1)) < 0, else 0}
-torch::Tensor d_elu(torch::Tensor z, torch::Scalar alpha = 1.0)
-{
-    auto e = z.exp();
-    auto mask = (alpha * (e - 1)) < 0;
-    return (z > 0).type_as(z) + mask.type_as(z) * (alpha * e);
-}
-
-torch::Tensor weight_unsqueeze(torch::Tensor z)
+torch::Tensor _unsqueeze_023(torch::Tensor z)
 {
     return z.unsqueeze(0).unsqueeze(2).unsqueeze(3);
 }
@@ -52,14 +29,14 @@ std::vector<torch::Tensor> batch_norm_forward(
     }
     else
     {
-        mean = running_mean;
-        var = running_var;
+        mean = _unsqueeze_023(running_mean);
+        var = _unsqueeze_023(running_var);
     }
 
     auto inv_std = torch::rsqrt(var + eps);
     auto x_hat = (input - mean) * inv_std;
 
-    auto output = x_hat * weight_unsqueeze(weight) + weight_unsqueeze(bias);
+    auto output = x_hat * _unsqueeze_023(weight) + _unsqueeze_023(bias);
 
     return {output,
             mean,
@@ -76,7 +53,7 @@ std::vector<torch::Tensor> batch_norm_backward(
 {
     auto N = grad_out.size(0) * grad_out.size(2) * grad_out.size(3);
 
-    auto grad_xhat = grad_out * weight_unsqueeze(gamma);
+    auto grad_xhat = grad_out * _unsqueeze_023(gamma);
 
     auto grad_input = (1. / N) * inv_var * (N * grad_xhat - grad_xhat.sum({0, 2, 3}, true) - x_hat * (grad_xhat * x_hat).sum({0, 2, 3}, true));
 
