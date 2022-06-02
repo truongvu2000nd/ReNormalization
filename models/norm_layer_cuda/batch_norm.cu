@@ -58,6 +58,8 @@ batch_norm_forward(torch::Tensor& input_,
                                           eps);
       C10_CUDA_KERNEL_LAUNCH_CHECK();
     }));
+
+  output = output_reshaped.view(input_.sizes())
   return { output, mean, inv_std, x_hat };
 }
 
@@ -87,8 +89,8 @@ batch_norm_cuda_forward_kernel(const scalar_t* input,
     auto o = output[batch][plane];
     auto i = input[batch][plane];
     for (int feature = threadIdx.x; feature < fs; feature += blockDim.x) {
-      x_h[feature] = (i[feature] - mean) * invstd o[feature] =
-                       weight * x_h[feature] + bias;
+      x_h[feature] = (i[feature] - mean) * invstd;
+      o[feature] = weight * x_h[feature] + bias;
     }
   }
 }
