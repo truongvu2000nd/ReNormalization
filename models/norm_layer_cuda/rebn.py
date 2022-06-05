@@ -65,7 +65,7 @@ class ReBNCPP(_NormBase):
             self.running_var if not self.training or self.track_running_stats else None,
             bn_training,
             exponential_average_factor,
-            self.eps,
+            self.r,
         )
 
 
@@ -74,28 +74,28 @@ if __name__ == '__main__':
     import time
     from torch.autograd import gradcheck
 
-    bn = ReBNCPP(16).cuda()
-    x = torch.randn(4, 16, 4, 4, dtype=torch.double, requires_grad=True).cuda()
+    bn = ReBNCPP(2).cuda()
+    x = torch.randn(1, 2, 3, 3, dtype=torch.double, requires_grad=True).cuda() * 5
 
-    weight, bias, running_mean, running_var, training, momentum, eps = \
-        bn.weight, bn.bias, bn.running_mean, bn.running_var, True, bn.momentum, bn.eps
-    if gradcheck(ReBNFunction.apply, [x, weight.double(), bias.double(), running_mean.double(), running_var.double(), training, momentum, eps]):
-        print('Ok')
+    weight, bias, running_mean, running_var, training, momentum, r = \
+        bn.weight, bn.bias, bn.running_mean, bn.running_var, True, bn.momentum, bn.r
+    if gradcheck(ReBNFunction.apply, [x, weight.double(), bias.double(), running_mean.double(), running_var.double(), training, momentum, r]):
+        print('Test 1 Ok')
 
     bn = ReBNCPP(16, r=0.5).cuda()
-    x = torch.randn(4, 16, 4, 4, dtype=torch.double, requires_grad=True).cuda()
+    x = torch.randn(4, 16, 4, 4, dtype=torch.double, requires_grad=True).cuda() * 0.1
 
-    weight, bias, running_mean, running_var, training, momentum, eps = \
-        bn.weight, bn.bias, bn.running_mean, bn.running_var, True, bn.momentum, bn.eps
+    weight, bias, running_mean, running_var, training, momentum, r = \
+        bn.weight, bn.bias, bn.running_mean, bn.running_var, True, bn.momentum, bn.r
 
-    if gradcheck(ReBNFunction.apply, [x, weight.double(), bias.double(), running_mean.double(), running_var.double(), training, momentum, eps]):
-        print('Ok')
+    if gradcheck(ReBNFunction.apply, [x, weight.double(), bias.double(), running_mean.double(), running_var.double(), training, momentum, r]):
+        print('Test 2 Ok')
 
     bn = ReBNCPP(16, r=0.1).cuda()
-    x = torch.randn(4, 16, 4, 4, dtype=torch.double, requires_grad=True).cuda()
+    x = torch.randn(4, 16, 4, 4, dtype=torch.double, requires_grad=True).cuda() * 5
 
-    weight, bias, running_mean, running_var, training, momentum, eps = \
-        bn.weight, bn.bias, bn.running_mean, bn.running_var, True, bn.momentum, bn.eps
+    weight, bias, running_mean, running_var, training, momentum, r = \
+        bn.weight, bn.bias, bn.running_mean, bn.running_var, True, bn.momentum, bn.r
 
-    if gradcheck(ReBNFunction.apply, [x, weight.double(), bias.double(), running_mean.double(), running_var.double(), training, momentum, eps]):
-        print('Ok')
+    if gradcheck(ReBNFunction.apply, [x, weight.double(), bias.double(), running_mean.double(), running_var.double(), training, momentum, r]):
+        print('Test 3 Ok')

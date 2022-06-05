@@ -11,7 +11,7 @@ log_every:
 arch:
   value: ResNet18
 norm_type: 
-  value: rebn
+  value: rebn-cpp
 model_kwargs: 
   value: {r: 1.0}
 

@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from functools import partial
 
-from .norm_layer_cpp import BatchNormCPP, ReBNCPP
+from .norm_layer_cuda import BatchNormCPP, ReBNCPP
 
 
 class re_sigma(torch.autograd.Function):
@@ -68,7 +68,7 @@ class ReBN(nn.BatchNorm2d):
     def __init__(self, num_features, r=1., momentum=0.1,
                  affine=True, track_running_stats=True):
         super(ReBN, self).__init__(
-            num_features, momentum, affine, track_running_stats)
+            num_features, 1e-5, momentum, affine, track_running_stats)
         self.r = r
 
     def forward(self, input):

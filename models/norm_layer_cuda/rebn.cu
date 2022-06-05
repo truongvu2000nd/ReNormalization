@@ -152,8 +152,8 @@ __global__ void batch_norm_cuda_backward_kernel(
     auto grad_input_reshaped_index = grad_input_reshaped[batch][plane];
     for (int feature = threadIdx.x; feature < fs; feature += blockDim.x)
     {
-      if (inv_std < r) {
-        grad_input_reshaped_index[feature] = ((N-1) * 1. / N) * inv_std * grad_xhat_index[feature];
+      if (inv_std > 1. / r) {
+        grad_input_reshaped_index[feature] = (1. / N) * (1. / r) * (N * grad_xhat_index[feature] - grad_xhat_sum);
       }
       else {
         grad_input_reshaped_index[feature] = (1. / N) * inv_std * (N * grad_xhat_index[feature] - 
