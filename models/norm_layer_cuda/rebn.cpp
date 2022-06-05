@@ -9,13 +9,14 @@ std::vector<torch::Tensor> batch_norm_cuda_forward(torch::Tensor input,
                                                    torch::Tensor running_var,
                                                    bool training,
                                                    float momentum,
-                                                   float eps);
+                                                   float r);
 
 std::vector<torch::Tensor> batch_norm_cuda_backward(torch::Tensor grad_out,
                                                     torch::Tensor input,
                                                     torch::Tensor inv_var,
                                                     torch::Tensor x_hat,
-                                                    torch::Tensor gamma);
+                                                    torch::Tensor gamma,
+                                                    float r);
 
 // C++ interface
 
@@ -34,7 +35,7 @@ std::vector<torch::Tensor> batch_norm_forward(torch::Tensor input,
                                               torch::Tensor running_var,
                                               bool training,
                                               float momentum,
-                                              float eps)
+                                              float r)
 {
   CHECK_INPUT(input);
   CHECK_INPUT(weight);
@@ -43,14 +44,15 @@ std::vector<torch::Tensor> batch_norm_forward(torch::Tensor input,
   CHECK_INPUT(running_var);
 
   return batch_norm_cuda_forward(
-      input, weight, bias, running_mean, running_var, training, momentum, eps);
+      input, weight, bias, running_mean, running_var, training, momentum, r);
 }
 
 std::vector<torch::Tensor> batch_norm_backward(torch::Tensor grad_out,
                                                torch::Tensor input,
                                                torch::Tensor inv_var,
                                                torch::Tensor x_hat,
-                                               torch::Tensor gamma)
+                                               torch::Tensor gamma,
+                                               float r)
 {
   CHECK_INPUT(input);
   CHECK_INPUT(grad_out);
@@ -58,7 +60,7 @@ std::vector<torch::Tensor> batch_norm_backward(torch::Tensor grad_out,
   CHECK_INPUT(x_hat);
   CHECK_INPUT(gamma);
 
-  return batch_norm_cuda_backward(grad_out, input, inv_var, x_hat, gamma);
+  return batch_norm_cuda_backward(grad_out, input, inv_var, x_hat, gamma, r);
 }
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m)

@@ -7,32 +7,33 @@ from torch.utils.cpp_extension import load
 import os
 
 module_path = os.path.dirname(__file__)
-batch_norm_cpp = load(name="batch_norm_cpp", sources=[
-                      os.path.join(module_path, "batch_norm.cpp"), 
-                      os.path.join(module_path, "batch_norm.cu")])
+rebn_cpp = load(name="rebn_cpp", sources=[
+                      os.path.join(module_path, "rebn.cpp"), 
+                      os.path.join(module_path, "rebn.cu")])
 
 
-class BatchNormFunction(Function):
+class ReBNFunction(Function):
     @staticmethod
-    def forward(ctx, input, weight, bias, running_mean, running_var, training, momentum, eps):
-        output, inv_std, x_hat = batch_norm_cpp.forward(
-            input, weight, bias, running_mean, running_var, training, momentum, eps)
-        ctx.save_for_backward(input, inv_std, x_hat, weight)
+    def forward(ctx, input, weight, bias, running_mean, running_var, training, momentum, r):
+        output, inv_std, x_hat = rebn_cpp.forward(
+            input, weight, bias, running_mean, running_var, training, momentum, r)
+        ctx.save_for_backward(input, inv_std, x_hat, weight, r)
         return output
 
     @staticmethod
     def backward(ctx, grad_out):
-        grad_input, grad_weight, grad_bias = batch_norm_cpp.backward(
-            grad_out, *ctx.saved_tensors)
+        grad_input, grad_weight, grad_bias = rebn_cpp.backward(grad_out, *ctx.saved_tensors)
         return grad_input, grad_weight, grad_bias, None, None, None, None, None
 
 
-class BatchNormCPP(_NormBase):
-    def __init__(self, num_features, eps=1e-5, momentum=0.1,
+class ReBNCPP(_NormBase):
+    def __init__(self, num_features, r=1., momentum=0.1,
                  affine=True, track_running_stats=True):
-        super(BatchNormCPP, self).__init__(
-            num_features, eps, momentum, affine, track_running_stats
+        dummy_eps = 1e-5
+        super(ReBNCPP, self).__init__(
+            num_features, dummy_eps, momentum, affine, track_running_stats
         )
+        self.r = r
 
     def forward(self, input):
         if self.momentum is None:
@@ -55,7 +56,7 @@ class BatchNormCPP(_NormBase):
             bn_training = (self.running_mean is None) and (
                 self.running_var is None)
 
-        return BatchNormFunction.apply(
+        return ReBNFunction.apply(
             input,
             self.weight,
             self.bias,
@@ -70,20 +71,30 @@ class BatchNormCPP(_NormBase):
 if __name__ == '__main__':
     import sys
     import time
-    sys.path.append("..")
     from torch.autograd import gradcheck
 
-    def print_grad():
-        def hook(module, grad_input, grad_output):
-            print(grad_input)
-            print(grad_output[0].mean(), grad_output[0].size())
-        return hook
-
-    bn = BatchNormCPP(16).cuda()
-    # bn2 = nn.BatchNorm2d(8)
+    bn = ReBNCPP(16).cuda()
     x = torch.randn(4, 16, 4, 4, dtype=torch.double, requires_grad=True).cuda()
 
     weight, bias, running_mean, running_var, training, momentum, eps = \
         bn.weight, bn.bias, bn.running_mean, bn.running_var, True, bn.momentum, bn.eps
-    if gradcheck(BatchNormFunction.apply, [x, weight.double(), bias.double(), running_mean.double(), running_var.double(), training, momentum, eps]):
+    if gradcheck(ReBNFunction.apply, [x, weight.double(), bias.double(), running_mean.double(), running_var.double(), training, momentum, eps]):
+        print('Ok')
+
+    bn = ReBNCPP(16, r=0.5).cuda()
+    x = torch.randn(4, 16, 4, 4, dtype=torch.double, requires_grad=True).cuda()
+
+    weight, bias, running_mean, running_var, training, momentum, eps = \
+        bn.weight, bn.bias, bn.running_mean, bn.running_var, True, bn.momentum, bn.eps
+
+    if gradcheck(ReBNFunction.apply, [x, weight.double(), bias.double(), running_mean.double(), running_var.double(), training, momentum, eps]):
+        print('Ok')
+
+    bn = ReBNCPP(16, r=0.1).cuda()
+    x = torch.randn(4, 16, 4, 4, dtype=torch.double, requires_grad=True).cuda()
+
+    weight, bias, running_mean, running_var, training, momentum, eps = \
+        bn.weight, bn.bias, bn.running_mean, bn.running_var, True, bn.momentum, bn.eps
+
+    if gradcheck(ReBNFunction.apply, [x, weight.double(), bias.double(), running_mean.double(), running_var.double(), training, momentum, eps]):
         print('Ok')

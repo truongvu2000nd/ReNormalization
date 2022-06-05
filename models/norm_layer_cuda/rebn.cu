@@ -72,7 +72,7 @@ std::vector<torch::Tensor> batch_norm_cuda_forward(torch::Tensor input,
                                                    torch::Tensor running_var,
                                                    bool training,
                                                    float momentum,
-                                                   float eps)
+                                                   float r)
 {
   auto input_reshaped = input.reshape({input.size(0), input.size(1), -1});
   torch::Tensor mean, var;
@@ -91,8 +91,9 @@ std::vector<torch::Tensor> batch_norm_cuda_forward(torch::Tensor input,
     mean = running_mean;
     var = running_var;
   }
-
-  auto inv_std = torch::rsqrt(var + eps);
+  float dummy_eps = 1e-5;
+  auto inv_std = torch::rsqrt(var + dummy_eps);
+  auto re_inv_std = 1. / torch::clamp(torch::sqrt(var + dummy_eps), r);
 
   auto x_hat = torch::zeros_like(input_reshaped);
   auto output = torch::zeros_like(input);
@@ -111,7 +112,7 @@ std::vector<torch::Tensor> batch_norm_cuda_forward(torch::Tensor input,
     batch_norm_cuda_forward_kernel<scalar_t><<<blocks_trans, threads_trans>>>(
       input_reshaped.packed_accessor32<scalar_t,3,torch::RestrictPtrTraits>(),
       mean.packed_accessor32<scalar_t,1,torch::RestrictPtrTraits>(),
-      inv_std.packed_accessor32<scalar_t,1,torch::RestrictPtrTraits>(),
+      re_inv_std.packed_accessor32<scalar_t,1,torch::RestrictPtrTraits>(),
       weight.packed_accessor32<scalar_t,1,torch::RestrictPtrTraits>(),
       bias.packed_accessor32<scalar_t,1,torch::RestrictPtrTraits>(),
       x_hat.packed_accessor32<scalar_t,3,torch::RestrictPtrTraits>(),
@@ -130,7 +131,7 @@ __global__ void batch_norm_cuda_backward_kernel(
     torch::PackedTensorAccessor32<scalar_t, 1, torch::RestrictPtrTraits> grad_xhat_sum_,
     torch::PackedTensorAccessor32<scalar_t, 1, torch::RestrictPtrTraits> grad_xhat_xhat_sum_,
     torch::PackedTensorAccessor32<scalar_t, 1, torch::RestrictPtrTraits> inv_std_,
-    int N)
+    int N, float r)
 {
   int plane = blockIdx.x;
   if (plane >= grad_input_reshaped.size(1))
@@ -153,8 +154,13 @@ __global__ void batch_norm_cuda_backward_kernel(
     auto grad_input_reshaped_index = grad_input_reshaped[batch][plane];
     for (int feature = threadIdx.x; feature < fs; feature += blockDim.x)
     {
-      grad_input_reshaped_index[feature] = (1. / N) * inv_std * (N * grad_xhat_index[feature] - 
-                                            grad_xhat_sum - x_hat_index[feature] * grad_xhat_xhat_sum);
+      if (inv_std < r) {
+        grad_input_reshaped_index[feature] = ((N-1) * 1. / N) * inv_std * grad_xhat_index[feature];
+      }
+      else {
+        grad_input_reshaped_index[feature] = (1. / N) * inv_std * (N * grad_xhat_index[feature] - 
+                                              grad_xhat_sum - x_hat_index[feature] * grad_xhat_xhat_sum);
+      }
     }
   }
 }
@@ -163,7 +169,8 @@ std::vector<torch::Tensor> batch_norm_cuda_backward(torch::Tensor grad_out,
                                                     torch::Tensor input,
                                                     torch::Tensor inv_std,
                                                     torch::Tensor x_hat,
-                                                    torch::Tensor gamma)
+                                                    torch::Tensor gamma,
+                                                    float r)
 {
   c10::IntArrayRef norm_dim = {0, 2};
   auto grad_input = torch::zeros_like(input);
@@ -199,7 +206,7 @@ std::vector<torch::Tensor> batch_norm_cuda_backward(torch::Tensor grad_out,
       grad_xhat_sum.packed_accessor32<scalar_t,1,torch::RestrictPtrTraits>(),
       grad_xhat_xhat_sum.packed_accessor32<scalar_t,1,torch::RestrictPtrTraits>(),
       inv_std.packed_accessor32<scalar_t,1,torch::RestrictPtrTraits>(),
-      N
+      N, r
     );
     C10_CUDA_KERNEL_LAUNCH_CHECK(); });
 
