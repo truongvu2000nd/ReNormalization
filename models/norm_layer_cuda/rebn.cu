@@ -34,8 +34,7 @@ __global__ void batch_norm_cuda_forward_kernel(
     torch::PackedTensorAccessor32<scalar_t, 1, torch::RestrictPtrTraits> weight,
     torch::PackedTensorAccessor32<scalar_t, 1, torch::RestrictPtrTraits> bias,
     torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> x_hat,
-    torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> output,
-    float eps)
+    torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> output)
 {
   int plane = blockIdx.x;
   if (plane >= input.size(1))
@@ -116,8 +115,7 @@ std::vector<torch::Tensor> batch_norm_cuda_forward(torch::Tensor input,
       weight.packed_accessor32<scalar_t,1,torch::RestrictPtrTraits>(),
       bias.packed_accessor32<scalar_t,1,torch::RestrictPtrTraits>(),
       x_hat.packed_accessor32<scalar_t,3,torch::RestrictPtrTraits>(),
-      output_reshaped.packed_accessor32<scalar_t,3,torch::RestrictPtrTraits>(),
-      eps);
+      output_reshaped.packed_accessor32<scalar_t,3,torch::RestrictPtrTraits>());
     C10_CUDA_KERNEL_LAUNCH_CHECK(); });
 
   return {output, inv_std, x_hat};

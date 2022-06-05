@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from functools import partial
 
-from .norm_layer_cpp import BatchNormCPP
+from .norm_layer_cpp import BatchNormCPP, ReBNCPP
 
 
 class re_sigma(torch.autograd.Function):
@@ -190,6 +190,8 @@ def get_norm_layer(norm_layer=None, **kwargs):
         norm_layer = partial(GN, **kwargs)
     elif norm_layer == "rebn":
         norm_layer = partial(ReBN, **kwargs)
+    elif norm_layer == "rebn-cpp":
+        norm_layer = partial(ReBNCPP, **kwargs)
     elif norm_layer == "regn":
         norm_layer = partial(ReGN, **kwargs)
     else:

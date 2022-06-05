@@ -17,12 +17,13 @@ class ReBNFunction(Function):
     def forward(ctx, input, weight, bias, running_mean, running_var, training, momentum, r):
         output, inv_std, x_hat = rebn_cpp.forward(
             input, weight, bias, running_mean, running_var, training, momentum, r)
-        ctx.save_for_backward(input, inv_std, x_hat, weight, r)
+        ctx.save_for_backward(input, inv_std, x_hat, weight)
+        ctx.r = r
         return output
 
     @staticmethod
     def backward(ctx, grad_out):
-        grad_input, grad_weight, grad_bias = rebn_cpp.backward(grad_out, *ctx.saved_tensors)
+        grad_input, grad_weight, grad_bias = rebn_cpp.backward(grad_out, *ctx.saved_tensors, ctx.r)
         return grad_input, grad_weight, grad_bias, None, None, None, None, None
 
 
