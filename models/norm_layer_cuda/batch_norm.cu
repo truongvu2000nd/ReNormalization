@@ -191,11 +191,11 @@ std::vector<torch::Tensor> batch_norm_cuda_forward(torch::Tensor input,
 template <typename scalar_t>
 __global__ void batch_norm_cuda_backward_kernel(
     torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> input,
-    torch::PackedTensorAccessor32<scalar_t, 1, torch::RestrictPtrTraits> grad_output,
-    torch::PackedTensorAccessor32<scalar_t, 1, torch::RestrictPtrTraits> grad_input,
+    torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> grad_output,
+    torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> grad_input,
     torch::PackedTensorAccessor32<scalar_t, 1, torch::RestrictPtrTraits> grad_weight,
     torch::PackedTensorAccessor32<scalar_t, 1, torch::RestrictPtrTraits> grad_bias,
-    torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> weight,
+    torch::PackedTensorAccessor32<scalar_t, 1, torch::RestrictPtrTraits> weight,
     torch::PackedTensorAccessor32<scalar_t, 1, torch::RestrictPtrTraits> mean_,
     torch::PackedTensorAccessor32<scalar_t, 1, torch::RestrictPtrTraits> invstd_,
     int N)
@@ -240,13 +240,13 @@ std::vector<torch::Tensor> batch_norm_cuda_backward(torch::Tensor grad_out_,
                                                     torch::Tensor input_,
                                                     torch::Tensor weight_,
                                                     torch::Tensor mean_,
-                                                    torch::Tensor invstd_,)
+                                                    torch::Tensor invstd_)
 {
   auto input_reshaped = input_.reshape({input_.size(0), input_.size(1), -1});
-  auto grad_output_reshaped = grad_out_.reshape(input_reshaped.sizes());
+  auto grad_out_reshaped = grad_out_.reshape(input_reshaped.sizes());
 
-  auto grad_input = torch::zeros_like(input);
-  auto grad_input_reshaped = grad_input_.view(input_reshaped.sizes());
+  auto grad_input = torch::zeros_like(input_);
+  auto grad_input_reshaped = grad_input.view(input_reshaped.sizes());
 
   auto grad_weight = torch::zeros_like(weight_);
   auto grad_bias = torch::zeros_like(weight_);
