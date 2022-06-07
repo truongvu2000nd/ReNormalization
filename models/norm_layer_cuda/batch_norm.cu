@@ -250,7 +250,7 @@ __global__ void batch_norm_cuda_backward_kernel(
   }
 
   if (threadIdx.x == 0) {
-    grad_weight[plane] = dot_p;
+    grad_weight[plane] = dot_p * invstd;
   }
 
   if (threadIdx.x == 0) {
