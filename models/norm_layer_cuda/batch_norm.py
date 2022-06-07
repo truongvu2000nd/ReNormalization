@@ -73,7 +73,7 @@ if __name__ == '__main__':
     from torch.autograd import gradcheck
 
     bn = BatchNormCPP(4).cuda()
-    bn2 = nn.BatchNorm2d(4)
+    bn2 = nn.BatchNorm2d(4).cuda()
 
     print("Test forward..............")
     x = torch.randn(1, 4, 2, 2).cuda()
