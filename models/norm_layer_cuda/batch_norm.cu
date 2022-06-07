@@ -1,4 +1,5 @@
 #include <c10/cuda/CUDAException.h>
+#include <ATen/cuda/DeviceUtils.cuh>
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <torch/extension.h>
@@ -24,6 +25,11 @@ static int getNumThreads(int nElem)
     }
   }
   return MAX_BLOCK_SIZE;
+}
+
+// Returns the index of the most significant 1 bit in `val`.
+__device__ __forceinline__ int getMSB(int val) {
+  return 31 - __clz(val);
 }
 
 template <typename scalar_t, typename accscalar_t>
