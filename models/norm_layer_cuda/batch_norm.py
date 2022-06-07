@@ -79,7 +79,14 @@ if __name__ == '__main__':
         return hook
 
     bn = BatchNormCPP(16).cuda()
-    # bn2 = nn.BatchNorm2d(8)
+    bn2 = nn.BatchNorm2d(16)
+
+    print("Test forward..............")
+    x = torch.randn(4, 16, 4, 4).cuda()
+    print(bn(x))
+    print(bn2(x))
+
+    print("Test backward.............")
     x = torch.randn(4, 16, 4, 4, dtype=torch.double, requires_grad=True).cuda()
 
     weight, bias, running_mean, running_var, training, momentum, eps = \
