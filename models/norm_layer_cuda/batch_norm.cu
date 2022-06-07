@@ -258,25 +258,25 @@ __global__ void batch_norm_cuda_backward_kernel(
   }
 }
 
-std::vector<torch::Tensor> batch_norm_cuda_backward(torch::Tensor grad_out_,
-                                                    torch::Tensor input_,
-                                                    torch::Tensor weight_,
-                                                    torch::Tensor mean_,
-                                                    torch::Tensor invstd_)
+std::vector<torch::Tensor> batch_norm_cuda_backward(torch::Tensor grad_out,
+                                                    torch::Tensor input,
+                                                    torch::Tensor mean,
+                                                    torch::Tensor invstd,
+                                                    torch::Tensor weight)
 {
-  auto input_reshaped = input_.reshape({input_.size(0), input_.size(1), -1});
-  auto grad_out_reshaped = grad_out_.reshape(input_reshaped.sizes());
+  auto input_reshaped = input.reshape({input.size(0), input.size(1), -1});
+  auto grad_out_reshaped = grad_out.reshape(input_reshaped.sizes());
 
-  auto grad_input = torch::zeros_like(input_);
+  auto grad_input = torch::zeros_like(input);
   auto grad_input_reshaped = grad_input.view(input_reshaped.sizes());
 
-  auto grad_weight = torch::zeros_like(weight_);
-  auto grad_bias = torch::zeros_like(weight_);
+  auto grad_weight = torch::zeros_like(weight);
+  auto grad_bias = torch::zeros_like(weight);
   
   auto N = grad_out_reshaped.size(0) * grad_out_reshaped.size(2);
 
-  dim3 blocks(input_.size(1));
-  int tf = getNumThreads(input_.size(2));
+  dim3 blocks(input.size(1));
+  int tf = getNumThreads(input.size(2));
   dim3 threads(tf, std::max<int>(1, MAX_BLOCK_SIZE/tf));
 
   AT_DISPATCH_FLOATING_TYPES(grad_out_reshaped.scalar_type(), "batch_norm_backward_cuda", [&]
@@ -287,9 +287,9 @@ std::vector<torch::Tensor> batch_norm_cuda_backward(torch::Tensor grad_out_,
       grad_input_reshaped.packed_accessor32<scalar_t,3,torch::RestrictPtrTraits>(),
       grad_weight.packed_accessor32<scalar_t,1,torch::RestrictPtrTraits>(),
       grad_bias.packed_accessor32<scalar_t,1,torch::RestrictPtrTraits>(),
-      weight_.packed_accessor32<scalar_t,1,torch::RestrictPtrTraits>(),
-      mean_.packed_accessor32<scalar_t,1,torch::RestrictPtrTraits>(),
-      invstd_.packed_accessor32<scalar_t,1,torch::RestrictPtrTraits>(),
+      weight.packed_accessor32<scalar_t,1,torch::RestrictPtrTraits>(),
+      mean.packed_accessor32<scalar_t,1,torch::RestrictPtrTraits>(),
+      invstd.packed_accessor32<scalar_t,1,torch::RestrictPtrTraits>(),
       N
     );
     C10_CUDA_KERNEL_LAUNCH_CHECK(); });
