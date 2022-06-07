@@ -53,6 +53,22 @@ struct GradOp {
   const PTA& grad_output;
 };
 
+// Sum across all threads within a warp
+template <typename T>
+static __device__ __forceinline__ T warpSum(T val) {
+  for (int i = 0; i < getMSB(C10_WARP_SIZE); ++i) {
+    val += WARP_SHFL_XOR(val, 1 << i, C10_WARP_SIZE);
+  }
+  return val;
+}
+
+template <typename scalar_t, typename accscalar_t>
+static __device__ __forceinline__ Float2<scalar_t, accscalar_t> warpSum(Float2<scalar_t, accscalar_t> value) {
+  value.v1 = warpSum(value.v1);
+  value.v2 = warpSum(value.v2);
+  return value;
+}
+
 template<typename scalar_t, typename Op, typename PTA>
 __device__ scalar_t reduce(Op op, PTA tensor, int plane) {
   // first the reductions each thread does separately
@@ -253,8 +269,8 @@ std::vector<torch::Tensor> batch_norm_cuda_backward(torch::Tensor grad_out_,
   
   auto N = grad_out_reshaped.size(0) * grad_out_reshaped.size(2);
 
-  dim3 blocks(input.size(1));
-  int tf = getNumThreads(input.size(2));
+  dim3 blocks(input_.size(1));
+  int tf = getNumThreads(input_.size(2));
   dim3 threads(tf, std::max<int>(1, MAX_BLOCK_SIZE/tf));
 
   AT_DISPATCH_FLOATING_TYPES(grad_out_reshaped.scalar_type(), "batch_norm_backward_cuda", [&]
