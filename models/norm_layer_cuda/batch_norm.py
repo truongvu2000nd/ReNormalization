@@ -72,22 +72,16 @@ if __name__ == '__main__':
     sys.path.append("..")
     from torch.autograd import gradcheck
 
-    def print_grad():
-        def hook(module, grad_input, grad_output):
-            print(grad_input)
-            print(grad_output[0].mean(), grad_output[0].size())
-        return hook
-
-    bn = BatchNormCPP(16).cuda()
-    bn2 = nn.BatchNorm2d(16)
+    bn = BatchNormCPP(4).cuda()
+    bn2 = nn.BatchNorm2d(4)
 
     print("Test forward..............")
-    x = torch.randn(4, 16, 4, 4).cuda()
+    x = torch.randn(1, 4, 2, 2).cuda()
     print(bn(x))
     print(bn2(x))
 
     print("Test backward.............")
-    x = torch.randn(4, 16, 4, 4, dtype=torch.double, requires_grad=True).cuda()
+    x = torch.randn(4, 4, 4, 4, dtype=torch.double, requires_grad=True).cuda()
 
     weight, bias, running_mean, running_var, training, momentum, eps = \
         bn.weight, bn.bias, bn.running_mean, bn.running_var, True, bn.momentum, bn.eps
