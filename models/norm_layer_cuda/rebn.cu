@@ -26,6 +26,50 @@ static int getNumThreads(int nElem)
   return MAX_BLOCK_SIZE;
 }
 
+template<typename scalar_t, typename Op, typename PTA>
+__device__ scalar_t reduce(Op op, PTA tensor, int plane) {
+  // first the reductions each thread does separately
+  scalar_t sum = static_cast<scalar_t>(0);
+  for (int batch = threadIdx.y; batch < tensor.size(0); batch += blockDim.y) {
+    for (int x = threadIdx.x; x < tensor.size(2); x += blockDim.x) {
+      sum += op(batch, plane, x);
+    }
+  }
+
+  // first warpSum to get one value per thread to
+  // one value per warp
+  sum = warpSum(sum);
+
+  // this writes each warps  item into shared memory
+  // there are at most C10_WARP_SIZE items left because
+  // there are at most C10_WARP_SIZE**2 threads at the beginning
+  __shared__ scalar_t shared[C10_WARP_SIZE];
+  __syncthreads();
+  int tid = threadIdx.x + threadIdx.y * blockDim.x;
+  if (tid % C10_WARP_SIZE == 0) {
+    shared[tid / C10_WARP_SIZE] = sum;
+  }
+  if (tid >= blockDim.x * blockDim.y / C10_WARP_SIZE && tid < C10_WARP_SIZE) {
+    // zero out the other entries in shared
+    shared[tid] = (scalar_t)0;
+  }
+  __syncthreads();
+  // now have a second warpSum to reduce the intermediate values
+  // from shared memory to a single number. The very first
+  // thread writes it to shared memory.
+
+  if (tid / C10_WARP_SIZE == 0) {
+    sum = warpSum(shared[tid]);
+    if (tid == 0) {
+      shared[0] = sum;
+    }
+  }
+  __syncthreads();
+
+  // Everyone picks it up, should be broadcast into the whole grad_input
+  return shared[0];
+}
+
 template <typename scalar_t>
 __global__ void batch_norm_cuda_forward_kernel(
     torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> input,

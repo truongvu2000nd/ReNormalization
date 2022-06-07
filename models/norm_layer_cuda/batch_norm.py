@@ -28,10 +28,9 @@ class BatchNormFunction(Function):
 
 
 class BatchNormCPP(_NormBase):
-    def __init__(self, num_features, eps=1e-5, momentum=0.1,
-                 affine=True, track_running_stats=True):
+    def __init__(self, num_features, eps=1e-5, momentum=0.1):
         super(BatchNormCPP, self).__init__(
-            num_features, eps, momentum, affine, track_running_stats
+            num_features, eps, momentum, True, True
         )
 
     def forward(self, input):

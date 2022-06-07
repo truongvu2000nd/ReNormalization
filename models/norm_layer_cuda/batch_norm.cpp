@@ -13,9 +13,9 @@ std::vector<torch::Tensor> batch_norm_cuda_forward(torch::Tensor input,
 
 std::vector<torch::Tensor> batch_norm_cuda_backward(torch::Tensor grad_out,
                                                     torch::Tensor input,
-                                                    torch::Tensor inv_var,
-                                                    torch::Tensor x_hat,
-                                                    torch::Tensor gamma);
+                                                    torch::Tensor mean,
+                                                    torch::Tensor invstd,
+                                                    torch::Tensor weight);
 
 // C++ interface
 
@@ -48,17 +48,17 @@ std::vector<torch::Tensor> batch_norm_forward(torch::Tensor input,
 
 std::vector<torch::Tensor> batch_norm_backward(torch::Tensor grad_out,
                                                torch::Tensor input,
-                                               torch::Tensor inv_var,
-                                               torch::Tensor x_hat,
-                                               torch::Tensor gamma)
+                                               torch::Tensor mean,
+                                               torch::Tensor invstd,
+                                               torch::Tensor weight)
 {
   CHECK_INPUT(input);
   CHECK_INPUT(grad_out);
-  CHECK_INPUT(inv_var);
-  CHECK_INPUT(x_hat);
-  CHECK_INPUT(gamma);
+  CHECK_INPUT(mean);
+  CHECK_INPUT(invstd);
+  CHECK_INPUT(weight);
 
-  return batch_norm_cuda_backward(grad_out, input, inv_var, x_hat, gamma);
+  return batch_norm_cuda_backward(grad_out, input, mean, invstd, weight);
 }
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m)

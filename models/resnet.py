@@ -143,6 +143,9 @@ def ResNet152(**kwargs: Any):
 if __name__ == '__main__':
     from torchinfo import summary
 
-    net = ResNet34(norm_layer="rebn")
+    net = ResNet50(norm_layer="rebn")
     # summary(net, (1, 3, 32, 32), depth=4)
-    print(net)
+    # print(net)
+    for name, m in net.named_modules():
+        if "bn" in name:
+            print(name, m)
