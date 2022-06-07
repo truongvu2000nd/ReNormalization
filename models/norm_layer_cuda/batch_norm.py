@@ -15,9 +15,9 @@ batch_norm_cpp = load(name="batch_norm_cpp", sources=[
 class BatchNormFunction(Function):
     @staticmethod
     def forward(ctx, input, weight, bias, running_mean, running_var, training, momentum, eps):
-        output, inv_std, x_hat = batch_norm_cpp.forward(
+        output, mean, invstd = batch_norm_cpp.forward(
             input, weight, bias, running_mean, running_var, training, momentum, eps)
-        ctx.save_for_backward(input, inv_std, x_hat, weight)
+        ctx.save_for_backward(input, mean, invstd, weight)
         return output
 
     @staticmethod
