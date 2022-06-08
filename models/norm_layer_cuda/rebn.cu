@@ -126,8 +126,7 @@ __global__ void rebn_cuda_forward_kernel(
     torch::PackedTensorAccessor32<scalar_t, 1, torch::RestrictPtrTraits> invstd_,
     torch::PackedTensorAccessor32<scalar_t, 1, torch::RestrictPtrTraits> weight,
     torch::PackedTensorAccessor32<scalar_t, 1, torch::RestrictPtrTraits> bias,
-    torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> output,
-    float eps)
+    torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> output)
 {
   int plane = blockIdx.x;
   if (plane >= input.size(1))
@@ -156,13 +155,13 @@ __global__ void rebn_cuda_forward_kernel(
 }
 
 std::vector<torch::Tensor> rebn_cuda_forward(torch::Tensor input,
-                                                   torch::Tensor weight,
-                                                   torch::Tensor bias,
-                                                   torch::Tensor running_mean,
-                                                   torch::Tensor running_var,
-                                                   bool training,
-                                                   float momentum,
-                                                   float r)
+                                             torch::Tensor weight,
+                                             torch::Tensor bias,
+                                             torch::Tensor running_mean,
+                                             torch::Tensor running_var,
+                                             bool training,
+                                             float momentum,
+                                             float r)
 {
   auto input_reshaped = input.reshape({input.size(0), input.size(1), -1});
   torch::Tensor mean, var;
