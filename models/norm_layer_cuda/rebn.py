@@ -82,7 +82,7 @@ if __name__ == '__main__':
 
     weight, bias, running_mean, running_var, training, momentum, r = \
         bn.weight, bn.bias, bn.running_mean, bn.running_var, True, bn.momentum, bn.r
-    if gradcheck(ReBNFunction.apply, [x, weight.double(), bias.double(), running_mean.double(), running_var.double(), training, momentum, r]):
+    if gradcheck(ReBNFunction.apply, [x, weight.double(), bias.double(), running_mean.double(), running_var.double(), training, momentum, r, False]):
         print('Test 1 Ok')
 
     bn = ReBNCPP(16, r=0.5).cuda()
@@ -91,7 +91,7 @@ if __name__ == '__main__':
     weight, bias, running_mean, running_var, training, momentum, r = \
         bn.weight, bn.bias, bn.running_mean, bn.running_var, True, bn.momentum, bn.r
 
-    if gradcheck(ReBNFunction.apply, [x, weight.double(), bias.double(), running_mean.double(), running_var.double(), training, momentum, r]):
+    if gradcheck(ReBNFunction.apply, [x, weight.double(), bias.double(), running_mean.double(), running_var.double(), training, momentum, r, False]):
         print('Test 2 Ok')
 
     bn = ReBNCPP(16, r=0.1).cuda()
@@ -100,5 +100,14 @@ if __name__ == '__main__':
     weight, bias, running_mean, running_var, training, momentum, r = \
         bn.weight, bn.bias, bn.running_mean, bn.running_var, True, bn.momentum, bn.r
 
-    if gradcheck(ReBNFunction.apply, [x, weight.double(), bias.double(), running_mean.double(), running_var.double(), training, momentum, r]):
+    if gradcheck(ReBNFunction.apply, [x, weight.double(), bias.double(), running_mean.double(), running_var.double(), training, momentum, r, False]):
         print('Test 3 Ok')
+    
+    bn = ReBNCPP(16, r=0.1).cuda()
+    x = torch.randn(4, 16, 4, 4, dtype=torch.double, requires_grad=True).cuda() * 5
+
+    weight, bias, running_mean, running_var, training, momentum, r = \
+        bn.weight, bn.bias, bn.running_mean, bn.running_var, True, bn.momentum, bn.r
+
+    if gradcheck(ReBNFunction.apply, [x, weight.double(), bias.double(), running_mean.double(), running_var.double(), training, momentum, r, True]):
+        print('Test 4 Ok')
