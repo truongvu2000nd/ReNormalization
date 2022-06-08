@@ -226,6 +226,7 @@ __global__ void rebn_cuda_backward_kernel(
   scalar_t invstd = invstd_[plane];
   scalar_t weight_val = weight[plane];
   scalar_t norm = scalar_t(1) / N;
+  scalar_t rr = scalar_t(1) / r;
 
   GradOp<scalar_t, scalar_t, torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits>> g(mean, input, grad_output);
   auto res = reduce<Float2<scalar_t, scalar_t>>(g, grad_output, plane);
@@ -243,8 +244,8 @@ __global__ void rebn_cuda_backward_kernel(
         scalar_t go = grad_output[batch][plane][x];
         scalar_t inp = input[batch][plane][x];
         scalar_t proj = (inp - mean) * proj_scale;
-        if (!straight_through && invstd > 1. / r) {
-          grad_input[batch][plane][x] = (go - grad_mean) * (1. / r) * weight_val;
+        if (!straight_through && invstd > rr) {
+          grad_input[batch][plane][x] = (go - grad_mean) * rr * weight_val;
         }
         else {
           grad_input[batch][plane][x] = (go - proj - grad_mean) * grad_scale;
@@ -254,7 +255,12 @@ __global__ void rebn_cuda_backward_kernel(
   }
 
   if (threadIdx.x == 0) {
-    grad_weight[plane] = dot_p * invstd;
+    if (!straight_through && invstd > rr) {
+      grad_weight[plane] = dot_p * invstd;
+    }
+    else {
+      grad_weight[plane] = dot_p * rr;
+    }
   }
 
   if (threadIdx.x == 0) {
