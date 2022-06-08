@@ -30,13 +30,13 @@ std::vector<torch::Tensor> rebn_cuda_backward(torch::Tensor grad_out,
   CHECK_CONTIGUOUS(x)
 
 std::vector<torch::Tensor> rebn_forward(torch::Tensor input,
-                                              torch::Tensor weight,
-                                              torch::Tensor bias,
-                                              torch::Tensor running_mean,
-                                              torch::Tensor running_var,
-                                              bool training,
-                                              float momentum,
-                                              float r)
+                                        torch::Tensor weight,
+                                        torch::Tensor bias,
+                                        torch::Tensor running_mean,
+                                        torch::Tensor running_var,
+                                        bool training,
+                                        float momentum,
+                                        float r)
 {
   CHECK_INPUT(input);
   CHECK_INPUT(weight);

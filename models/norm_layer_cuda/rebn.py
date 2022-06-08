@@ -15,9 +15,9 @@ rebn_cpp = load(name="rebn_cpp", sources=[
 class ReBNFunction(Function):
     @staticmethod
     def forward(ctx, input, weight, bias, running_mean, running_var, training, momentum, r, straight_through):
-        output, inv_std, x_hat = rebn_cpp.forward(
+        output, mean, invstd = rebn_cpp.forward(
             input, weight, bias, running_mean, running_var, training, momentum, r)
-        ctx.save_for_backward(input, inv_std, x_hat, weight)
+        ctx.save_for_backward(input, mean, invstd, weight)
         ctx.r = r
         ctx.straight_through = straight_through
         return output
