@@ -182,8 +182,8 @@ std::vector<torch::Tensor> rebn_cuda_forward(torch::Tensor input,
     var = running_var;
   }
   float dummy_eps = 1e-5;
-  auto inv_std = torch::rsqrt(var + dummy_eps);
-  auto re_inv_std = 1. / torch::clamp(torch::sqrt(var + dummy_eps), r);
+  auto invstd = torch::rsqrt(var + dummy_eps);
+  auto re_invstd = 1. / torch::clamp(torch::sqrt(var + dummy_eps), r);
 
   auto output = torch::zeros_like(input);
   auto output_reshaped = output.view({input.size(0), input.size(1), -1});
@@ -201,14 +201,13 @@ std::vector<torch::Tensor> rebn_cuda_forward(torch::Tensor input,
     rebn_cuda_forward_kernel<scalar_t><<<blocks_trans, threads_trans>>>(
       input_reshaped.packed_accessor32<scalar_t,3,torch::RestrictPtrTraits>(),
       mean.packed_accessor32<scalar_t,1,torch::RestrictPtrTraits>(),
-      re_inv_std.packed_accessor32<scalar_t,1,torch::RestrictPtrTraits>(),
+      re_invstd.packed_accessor32<scalar_t,1,torch::RestrictPtrTraits>(),
       weight.packed_accessor32<scalar_t,1,torch::RestrictPtrTraits>(),
       bias.packed_accessor32<scalar_t,1,torch::RestrictPtrTraits>(),
-      x_hat.packed_accessor32<scalar_t,3,torch::RestrictPtrTraits>(),
       output_reshaped.packed_accessor32<scalar_t,3,torch::RestrictPtrTraits>());
     C10_CUDA_KERNEL_LAUNCH_CHECK(); });
 
-  return {output, mean, inv_std};
+  return {output, mean, invstd};
 }
 
 template <typename scalar_t>
@@ -245,7 +244,7 @@ __global__ void rebn_cuda_backward_kernel(
         scalar_t go = grad_output[batch][plane][x];
         scalar_t inp = input[batch][plane][x];
         scalar_t proj = (inp - mean) * proj_scale;
-        if (!straight_through && inv_std > 1. / r) {
+        if (!straight_through && invstd > 1. / r) {
           grad_input[batch][plane][x] = (go - grad_mean) * (1. / r) * weight_val;
         }
         else {
@@ -268,7 +267,7 @@ std::vector<torch::Tensor> rebn_cuda_backward(torch::Tensor grad_out,
                                               torch::Tensor input,
                                               torch::Tensor mean,
                                               torch::Tensor invstd,
-                                              torch::Tensor weight
+                                              torch::Tensor weight,
                                               float r,
                                               bool straight_through)
 {
@@ -289,7 +288,7 @@ std::vector<torch::Tensor> rebn_cuda_backward(torch::Tensor grad_out,
 
   AT_DISPATCH_FLOATING_TYPES(grad_out_reshaped.scalar_type(), "rebn_backward_cuda", [&]
                              {
-    rebn_cuda_backward_kernel<scalar_t><<<blocks_trans, threads_trans>>>(
+    rebn_cuda_backward_kernel<scalar_t><<<blocks, threads>>>(
       input_reshaped.packed_accessor32<scalar_t,3,torch::RestrictPtrTraits>(),
       grad_out_reshaped.packed_accessor32<scalar_t,3,torch::RestrictPtrTraits>(),
       grad_input_reshaped.packed_accessor32<scalar_t,3,torch::RestrictPtrTraits>(),
