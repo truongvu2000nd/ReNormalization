@@ -14,27 +14,29 @@ rebn_cpp = load(name="rebn_cpp", sources=[
 
 class ReBNFunction(Function):
     @staticmethod
-    def forward(ctx, input, weight, bias, running_mean, running_var, training, momentum, r):
+    def forward(ctx, input, weight, bias, running_mean, running_var, training, momentum, r, straight_through):
         output, inv_std, x_hat = rebn_cpp.forward(
             input, weight, bias, running_mean, running_var, training, momentum, r)
         ctx.save_for_backward(input, inv_std, x_hat, weight)
         ctx.r = r
+        ctx.straight_through = straight_through
         return output
 
     @staticmethod
     def backward(ctx, grad_out):
-        grad_input, grad_weight, grad_bias = rebn_cpp.backward(grad_out, *ctx.saved_tensors, ctx.r)
-        return grad_input, grad_weight, grad_bias, None, None, None, None, None
+        grad_input, grad_weight, grad_bias = rebn_cpp.backward(grad_out, *ctx.saved_tensors, ctx.r, ctx.straight_through)
+        return grad_input, grad_weight, grad_bias, None, None, None, None, None, None
 
 
 class ReBNCPP(_NormBase):
     def __init__(self, num_features, r=1., momentum=0.1,
-                 affine=True, track_running_stats=True):
+                 affine=True, track_running_stats=True, straight_through=False):
         dummy_eps = 1e-5
         super(ReBNCPP, self).__init__(
             num_features, dummy_eps, momentum, affine, track_running_stats
         )
         self.r = r
+        self.straight_through = straight_through
 
     def forward(self, input):
         if self.momentum is None:
@@ -66,6 +68,7 @@ class ReBNCPP(_NormBase):
             bn_training,
             exponential_average_factor,
             self.r,
+            self.straight_through
         )
 
 

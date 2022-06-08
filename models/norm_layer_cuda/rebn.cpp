@@ -2,21 +2,22 @@
 
 #include <vector>
 
-std::vector<torch::Tensor> batch_norm_cuda_forward(torch::Tensor input,
-                                                   torch::Tensor weight,
-                                                   torch::Tensor bias,
-                                                   torch::Tensor running_mean,
-                                                   torch::Tensor running_var,
-                                                   bool training,
-                                                   float momentum,
-                                                   float r);
+std::vector<torch::Tensor> rebn_cuda_forward(torch::Tensor input,
+                                             torch::Tensor weight,
+                                             torch::Tensor bias,
+                                             torch::Tensor running_mean,
+                                             torch::Tensor running_var,
+                                             bool training,
+                                             float momentum,
+                                             float r);
 
-std::vector<torch::Tensor> batch_norm_cuda_backward(torch::Tensor grad_out,
-                                                    torch::Tensor input,
-                                                    torch::Tensor inv_var,
-                                                    torch::Tensor x_hat,
-                                                    torch::Tensor gamma,
-                                                    float r);
+std::vector<torch::Tensor> rebn_cuda_backward(torch::Tensor grad_out,
+                                              torch::Tensor input,
+                                              torch::Tensor mean,
+                                              torch::Tensor invstd,
+                                              torch::Tensor weight,
+                                              float r,
+                                              bool straight_through);
 
 // C++ interface
 
@@ -28,7 +29,7 @@ std::vector<torch::Tensor> batch_norm_cuda_backward(torch::Tensor grad_out,
   CHECK_CUDA(x);       \
   CHECK_CONTIGUOUS(x)
 
-std::vector<torch::Tensor> batch_norm_forward(torch::Tensor input,
+std::vector<torch::Tensor> rebn_forward(torch::Tensor input,
                                               torch::Tensor weight,
                                               torch::Tensor bias,
                                               torch::Tensor running_mean,
@@ -43,28 +44,29 @@ std::vector<torch::Tensor> batch_norm_forward(torch::Tensor input,
   CHECK_INPUT(running_mean);
   CHECK_INPUT(running_var);
 
-  return batch_norm_cuda_forward(
+  return rebn_cuda_forward(
       input, weight, bias, running_mean, running_var, training, momentum, r);
 }
 
-std::vector<torch::Tensor> batch_norm_backward(torch::Tensor grad_out,
-                                               torch::Tensor input,
-                                               torch::Tensor inv_var,
-                                               torch::Tensor x_hat,
-                                               torch::Tensor gamma,
-                                               float r)
+std::vector<torch::Tensor> rebn_backward(torch::Tensor grad_out,
+                                         torch::Tensor input,
+                                         torch::Tensor mean,
+                                         torch::Tensor invstd,
+                                         torch::Tensor weight,
+                                         float r,
+                                         bool straight_through)
 {
   CHECK_INPUT(input);
   CHECK_INPUT(grad_out);
-  CHECK_INPUT(inv_var);
-  CHECK_INPUT(x_hat);
-  CHECK_INPUT(gamma);
+  CHECK_INPUT(mean);
+  CHECK_INPUT(invstd);
+  CHECK_INPUT(weight);
 
-  return batch_norm_cuda_backward(grad_out, input, inv_var, x_hat, gamma, r);
+  return rebn_cuda_backward(grad_out, input, mean, invstd, weight, r, straight_through);
 }
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m)
 {
-  m.def("forward", &batch_norm_forward, "BatchNorm forward");
-  m.def("backward", &batch_norm_backward, "BatchNorm backward");
+  m.def("forward", &rebn_forward, "ReBN forward");
+  m.def("backward", &rebn_backward, "ReBN backward");
 }
