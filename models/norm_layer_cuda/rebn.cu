@@ -256,10 +256,10 @@ __global__ void rebn_cuda_backward_kernel(
 
   if (threadIdx.x == 0) {
     if (!straight_through && invstd > rr) {
-      grad_weight[plane] = dot_p * invstd;
+      grad_weight[plane] = dot_p * rr;
     }
     else {
-      grad_weight[plane] = dot_p * rr;
+      grad_weight[plane] = dot_p * invstd;
     }
   }
 
