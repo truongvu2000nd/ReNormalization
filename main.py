@@ -136,6 +136,11 @@ net_dict = {
 }
 net = net_dict[config.arch](norm_layer=config.norm_type, **config.model_kwargs)
 net = net.to(device)
+if args.clip_weight is not None:
+    with torch.no_grad():
+        for name, p in net.named_parameters():
+            if ".weight" in name:
+                p.clamp_(-abs(args.clip_weight), abs(args.clip_weight))
 if device == 'cuda':
     cudnn.benchmark = True
 
@@ -177,12 +182,6 @@ def train(epoch):
     total = 0
     start_time = time.time()
     for batch_idx, (inputs, targets) in enumerate(trainloader):
-        with torch.no_grad():
-            if args.clip_weight is not None:
-                for name, p in net.named_parameters():
-                    if ".weight" in name:
-                        p.clamp_(-abs(args.clip_weight), abs(args.clip_weight))
-
         global_step += 1
         inputs, targets = inputs.to(device), targets.to(device)
         optimizer.zero_grad()
@@ -192,6 +191,12 @@ def train(epoch):
         if args.clip_grad is not None:
             torch.nn.utils.clip_grad_norm_(net.parameters(), args.clip_grad)
         optimizer.step()
+
+        with torch.no_grad():
+            if args.clip_weight is not None:
+                for name, p in net.named_parameters():
+                    if ".weight" in name:
+                        p.clamp_(-abs(args.clip_weight), abs(args.clip_weight))
 
         train_loss += loss.item()
         _, predicted = outputs.max(1)
