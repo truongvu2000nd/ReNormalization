@@ -22,9 +22,6 @@ from models import VGG, ResNet18, ResNet34, ResNet50
 from utils import naive_lip
 
 
-PROJECT_NAME = 'ResNet'
-
-
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
 parser.add_argument('--resume', '-r', action='store_true',
                     help='resume from checkpoint')
@@ -43,12 +40,13 @@ parser.add_argument('--wandb_group', default="", type=str, help='wandb group')
 parser.add_argument('--log_grad_norm', action='store_true', help="watch model gradients")
 parser.add_argument('--log_weight_norm', action='store_true', help="watch model weights")
 parser.add_argument('--compute_lip', action='store_true', help="estimate lipschitz")
-parser.add_argument('--clip_grad', action='store_true', help="clipping gradient")
-parser.add_argument('--clip_weight', action='store_true', help="clip weight")
+parser.add_argument('--clip_grad', default=None, type=float, help="clipping gradient")
+parser.add_argument('--clip_weight', default=None, type=float, help="clip weight")
 
 
 args = parser.parse_args()
 
+PROJECT_NAME = 'ResNet'
 if args.proj_name:
     PROJECT_NAME = args.proj_name
 
@@ -62,7 +60,8 @@ if not args.resume:
     config.update({"lr": args.lr, "n_epochs": args.n_epochs, "watch_model": args.watch_model, "arch": args.arch}, 
                    allow_val_change=True)
     config.use_scheduler = args.use_scheduler
-    config.log_norm_state_every = args.log_norm_state_every
+    # config.log_norm_state_every = args.log_norm_state_every
+    config.clip_weight = args.clip_weight
 print(config)
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -175,14 +174,20 @@ def train(epoch):
     total = 0
     start_time = time.time()
     for batch_idx, (inputs, targets) in enumerate(trainloader):
+
+        if args.clip_weight is not None:
+            for name, p in net.named_parameters():
+                if ".weight" in name:
+                    p.clamp_(-abs(args.clip_weight), abs(args.clip_weight))
+
         global_step += 1
         inputs, targets = inputs.to(device), targets.to(device)
         optimizer.zero_grad()
         outputs = net(inputs)
         loss = criterion(outputs, targets)
         loss.backward()
-        if args.clip_grad:
-            torch.nn.utils.clip_grad_norm_(net.parameters(), 4.)
+        if args.clip_grad is not None:
+            torch.nn.utils.clip_grad_norm_(net.parameters(), args.clip_grad)
         optimizer.step()
 
         train_loss += loss.item()
@@ -321,7 +326,35 @@ if __name__ == '__main__':
         # if (epoch + 1) % config.log_norm_state_every == 0 and epoch + 1 != config.n_epochs:
         #     log_norm_state()
     
-    # log_norm_state()
+    checkpoint = torch.load("checkpoint/best.pth")
+    missing_keys, _  = net.load_state_dict(checkpoint['net_state_dict'], strict=False)
+    print(missing_keys)
+    net.eval()
+    norm_fro_sh, norm_max_sh, norm_l2_sh, norm_fro_cw, norm_max_cw, norm_l2_cw = 0., 0., 0., 0., 0., 0.
+    n_params_sh, n_params_cw = 0, 0
+    for name, p in net.named_modules():
+        if isinstance(p, (nn.Conv2d, nn.Linear)):
+            norm_fro_sh += torch.linalg.matrix_norm(p.weight.view(p.weight.size(0), -1)).log10().item()
+            norm_max_sh += p.weight.abs().max().log10().item()
+            norm_l2_sh += torch.linalg.matrix_norm(p.weight.view(p.weight.size(0), -1), ord=2).log10().item()
+            n_params_sh += torch.numel(p.weight)
+
+        if isinstance(p, (nn.Conv2d, nn.Linear, nn.BatchNorm2d)):
+            norm_fro_cw += torch.linalg.matrix_norm(p.weight.view(p.weight.size(0), -1)).log10().item()
+            norm_max_cw += p.weight.abs().max().log10().item()
+            norm_l2_cw += torch.linalg.matrix_norm(p.weight.view(p.weight.size(0), -1), ord=2).log10().item()
+            n_params_cw += torch.numel(p.weight)
+
+    wandb.run.summary["norm_fro_sh"] = norm_fro_sh
+    wandb.run.summary["norm_max_sh"] = norm_max_sh
+    wandb.run.summary["norm_l2_sh"] = norm_l2_sh
+    wandb.run.summary["n_params_sh"] = n_params_sh
+
+    wandb.run.summary["norm_fro_cw"] = norm_fro_cw
+    wandb.run.summary["norm_max_cw"] = norm_max_cw
+    wandb.run.summary["norm_l2_cw"] = norm_l2_cw
+    wandb.run.summary["n_params_cw"] = n_params_cw
+
     if args.compute_lip:
         checkpoint = torch.load("checkpoint/best.pth")
         missing_keys, _  = net.load_state_dict(checkpoint['net_state_dict'], strict=False)
@@ -346,4 +379,3 @@ if __name__ == '__main__':
             pbar.set_description("Max norm1: {:.6f} {:.6f}".format(max_norm1, max_norm2))
         wandb.run.summary["lip_max_norm"] = max_norm1
         wandb.run.summary["lip_max_max_norm"] = max_norm2
-
