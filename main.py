@@ -42,6 +42,8 @@ parser.add_argument('--log_weight_norm', action='store_true', help="watch model 
 parser.add_argument('--compute_lip', action='store_true', help="estimate lipschitz")
 parser.add_argument('--clip_grad', default=None, type=float, help="clipping gradient")
 parser.add_argument('--clip_weight', default=None, type=float, help="clip weight")
+parser.add_argument('--model_r', default=1.0, type=float, help="model kwargs r")
+parser.add_argument('--straight_through', action='store_true', help="straight through")
 
 
 args = parser.parse_args()
@@ -57,7 +59,8 @@ else:
                      dir=args.save_dir, config=args.config, entity="truongvu2000")
 config = wandb.config
 if not args.resume:
-    config.update({"lr": args.lr, "n_epochs": args.n_epochs, "watch_model": args.watch_model, "arch": args.arch}, 
+    config.update({"lr": args.lr, "n_epochs": args.n_epochs, "watch_model": args.watch_model, "arch": args.arch,
+                   "model_kwargs": {"r": args.model_r, "straight_through": args.straight_through}}, 
                    allow_val_change=True)
     config.use_scheduler = args.use_scheduler
     # config.log_norm_state_every = args.log_norm_state_every
@@ -174,11 +177,11 @@ def train(epoch):
     total = 0
     start_time = time.time()
     for batch_idx, (inputs, targets) in enumerate(trainloader):
-
-        if args.clip_weight is not None:
-            for name, p in net.named_parameters():
-                if ".weight" in name:
-                    p.clamp_(-abs(args.clip_weight), abs(args.clip_weight))
+        with torch.no_grad():
+            if args.clip_weight is not None:
+                for name, p in net.named_parameters():
+                    if ".weight" in name:
+                        p.clamp_(-abs(args.clip_weight), abs(args.clip_weight))
 
         global_step += 1
         inputs, targets = inputs.to(device), targets.to(device)
