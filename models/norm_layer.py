@@ -146,6 +146,17 @@ class GN(nn.GroupNorm):
             f"eps={self.eps}, affine={self.affine})"
 
 
+class GN(nn.GroupNorm):
+    def __init__(self, num_channels, group_size=2, eps=1e-05, affine=True):
+        num_groups = num_channels // group_size
+        super(GN, self).__init__(num_groups, num_channels, eps, affine)
+        self.group_size = group_size
+
+    def __repr__(self):
+        return f"GN({self.num_channels}, group_size={self.group_size}, " \
+            f"eps={self.eps}, affine={self.affine})"
+
+
 class ReGN(nn.GroupNorm):
     def __init__(self, num_channels, group_size=2, r=1., affine=True):
         num_groups = num_channels // group_size
@@ -162,7 +173,7 @@ class ReGN(nn.GroupNorm):
         mean = input.mean(2)
         var = input.var(2, unbiased=False)
 
-        input = (input - mean[:, :, None]) / torch.sqrt(var[:, :, None]).clamp(min=self.r)
+        input = (input - mean[:, :, None]) / torch.sqrt(var[:, :, None] + self.eps).clamp(min=self.r)
 
         input = input.reshape(init_size)
         if self.affine:

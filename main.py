@@ -1,6 +1,7 @@
 '''Train CIFAR10 with PyTorch.'''
 import torch
 import torch.nn as nn
+from torch.nn.modules.batchnorm import _NormBase
 import torch.optim as optim
 import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
@@ -59,9 +60,11 @@ else:
                      dir=args.save_dir, config=args.config, entity="truongvu2000")
 config = wandb.config
 if not args.resume:
-    config.update({"lr": args.lr, "n_epochs": args.n_epochs, "watch_model": args.watch_model, "arch": args.arch,
-                   "model_kwargs": {"r": args.model_r, "straight_through": args.straight_through}}, 
+    config.update({"lr": args.lr, "n_epochs": args.n_epochs, "watch_model": args.watch_model, "arch": args.arch},
                    allow_val_change=True)
+    if config.norm_type in ["regn", "rebn"]:
+        config.update({"model_kwargs": {"r": args.model_r, "straight_through": args.straight_through}},
+                    allow_val_change=True) 
     config.use_scheduler = args.use_scheduler
     # config.log_norm_state_every = args.log_norm_state_every
     config.clip_weight = args.clip_weight
@@ -347,7 +350,7 @@ if __name__ == '__main__':
             norm_l2_sh += torch.linalg.matrix_norm(p.weight.view(p.weight.size(0), -1), ord=2).log10().item()
             n_params_sh += torch.numel(p.weight)
 
-        if isinstance(p, (nn.Conv2d, nn.Linear, nn.BatchNorm2d)):
+        if isinstance(p, (nn.Conv2d, nn.Linear, _NormBase, nn.GroupNorm)):
             norm_fro_cw += torch.linalg.matrix_norm(p.weight.view(p.weight.size(0), -1)).log10().item()
             norm_max_cw += p.weight.abs().max().log10().item()
             norm_l2_cw += torch.linalg.matrix_norm(p.weight.view(p.weight.size(0), -1), ord=2).log10().item()
