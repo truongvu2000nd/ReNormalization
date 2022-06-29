@@ -123,23 +123,23 @@ class GN(nn.GroupNorm):
             num_groups, num_channels, eps, affine)
         self.group_size = group_size
 
-    def forward(self, input):
-        b = input.size(0)
-        init_size = input.size()
-        input = input.reshape(b, self.num_groups, -1)
-        mean = input.mean(2)
-        var = input.var(2, unbiased=False)
+    # def forward(self, input):
+    #     b = input.size(0)
+    #     init_size = input.size()
+    #     input = input.reshape(b, self.num_groups, -1)
+    #     mean = input.mean(2)
+    #     var = input.var(2, unbiased=False)
 
-        input = (input - mean[:, :, None]) / (torch.sqrt(var[:, :, None] + self.eps))
+    #     input = (input - mean[:, :, None]) / (torch.sqrt(var[:, :, None] + self.eps))
 
-        input = input.reshape(init_size)
-        if self.affine:
-            if len(init_size) == 2:
-                input = input * self.weight[None, :] + self.bias[None, :]
-            elif len(init_size) == 4:
-                input = input * self.weight[None, :, None, None] + self.bias[None, :, None, None]
+    #     input = input.reshape(init_size)
+    #     if self.affine:
+    #         if len(init_size) == 2:
+    #             input = input * self.weight[None, :] + self.bias[None, :]
+    #         elif len(init_size) == 4:
+    #             input = input * self.weight[None, :, None, None] + self.bias[None, :, None, None]
 
-        return input
+    #     return input
 
     def __repr__(self):
         return f"GN({self.num_channels}, group_size={self.group_size}, " \
