@@ -158,11 +158,12 @@ class GN(nn.GroupNorm):
 
 
 class ReGN(nn.GroupNorm):
-    def __init__(self, num_channels, group_size=2, r=1., affine=True):
+    def __init__(self, num_channels, group_size=2, r=1., affine=True, straight_through=False):
         num_groups = num_channels // group_size
         super(ReGN, self).__init__(num_groups, num_channels, affine=affine)
         self.r = r
         self.group_size = group_size
+        self.straight_through = straight_through
 
     def forward(self, input):
         dummy_eps = 1e-5
@@ -172,7 +173,11 @@ class ReGN(nn.GroupNorm):
         s = input.size(2)
         var, mean = torch.var_mean(input, 2, unbiased=False)
 
-        input = (input - mean[:, :, None]) / torch.sqrt(var[:, :, None] + dummy_eps).clamp(min=self.r)
+        if self.straight_through:
+            std = re_sigma(torch.sqrt(var[:, :, None] + dummy_eps))
+        else:
+            std = torch.sqrt(var[:, :, None] + dummy_eps).clamp(min=self.r)
+        input = (input - mean[:, :, None]) / std
         # return input
         input = input.reshape(init_size)
         if self.affine:
