@@ -62,7 +62,7 @@ config = wandb.config
 if not args.resume:
     config.update({"lr": args.lr, "n_epochs": args.n_epochs, "watch_model": args.watch_model, "arch": args.arch},
                    allow_val_change=True)
-    if config.norm_type in ["regn", "rebn"]:
+    if config.norm_type in ["regn", "rebn", "rebn-cpp"]:
         config.update({"model_kwargs": {"r": args.model_r, "straight_through": args.straight_through}},
                     allow_val_change=True) 
     config.use_scheduler = args.use_scheduler
