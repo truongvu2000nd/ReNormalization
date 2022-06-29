@@ -255,6 +255,7 @@ def test(epoch):
     if acc > best_acc:
         state = {
             'net_state_dict': net.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
             'acc': acc,
             'loss': loss,
             'epoch': epoch,
