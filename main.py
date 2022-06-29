@@ -45,6 +45,7 @@ parser.add_argument('--clip_grad', default=None, type=float, help="clipping grad
 parser.add_argument('--clip_weight', default=None, type=float, help="clip weight")
 parser.add_argument('--model_r', default=1.0, type=float, help="model kwargs r")
 parser.add_argument('--straight_through', action='store_true', help="straight through")
+parser.add_argument('--resume_from_best', action='store_true', help="resume from best")
 
 
 args = parser.parse_args()
@@ -159,14 +160,25 @@ if config.use_scheduler:
 
 
 if wandb.run.resumed:
-    wandb.restore('checkpoint/last.pth')
-    checkpoint = torch.load(os.path.join(wandb.run.dir, 'checkpoint/last.pth'))
+    if args.resume_from_best:
+        checkpoint_path = 'checkpoint/last.pth'
+    else:
+        checkpoint_path = 'checkpoint/best.pth'
+
+    wandb.restore(checkpoint_path)
+    checkpoint = torch.load(os.path.join(wandb.run.dir, checkpoint_path))
+
     net.load_state_dict(checkpoint['net_state_dict'], strict=False)
-    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    if 'optimizer_state_dict' in checkpoint:
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
     start_epoch = checkpoint['epoch']
     loss = checkpoint['loss']
     global_step = run.step
-    best_acc = checkpoint['best_acc']
+    if 'best_acc' in checkpoint:
+        best_acc = checkpoint['best_acc']
+    else:
+        best_acc = checkpoint['acc']
     if config.use_scheduler:
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer, T_max=config.n_epochs, last_epoch=start_epoch, eta_min=5e-5
