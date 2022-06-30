@@ -181,8 +181,10 @@ if wandb.run.resumed:
         best_acc = checkpoint['acc']
     if config.use_scheduler:
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-            optimizer, T_max=config.n_epochs, last_epoch=start_epoch, eta_min=5e-5
+            optimizer, T_max=config.n_epochs, last_epoch=-1, eta_min=5e-5
         )
+        for _ in range(start_epoch):
+            scheduler.step()
     
 
 # ------------------------------------------------------
