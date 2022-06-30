@@ -161,9 +161,9 @@ if config.use_scheduler:
 
 if wandb.run.resumed:
     if args.resume_from_best:
-        checkpoint_path = 'checkpoint/last.pth'
-    else:
         checkpoint_path = 'checkpoint/best.pth'
+    else:
+        checkpoint_path = 'checkpoint/last.pth'
 
     wandb.restore(checkpoint_path)
     checkpoint = torch.load(os.path.join(wandb.run.dir, checkpoint_path))
